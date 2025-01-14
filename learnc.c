@@ -8,12 +8,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define MPG2KML 0.425144
+#define LPH2MPG 2.352
+
 void clear(){
 	while (getchar() != '\n');
 }
 
 double mpg2kml(double mpg){
-	return mpg*0.425144;
+	return mpg*MPG2KML;
 }
 
 double mpg2lphm(double mpg){
@@ -21,7 +24,7 @@ double mpg2lphm(double mpg){
 }
 
 double lph2mpg(double lph){
-	return lph*2.352;
+	return lph*LPH2MPG;
 }
 
 int main(){
