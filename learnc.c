@@ -8,6 +8,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+void clear(){
+	while (getchar() != '\n');
+}
 
 double mpg2kml(double mpg){
 	return mpg*0.425144;
@@ -26,13 +29,23 @@ int main(){
 	double lph;
 
 	printf("Enter an MPG value\n");
-	scanf("%lf", &mpg);
+	while(scanf("%lf", &mpg) != 1 || mpg < 0){
+		printf("Invalid input! Try again\n");
+		clear();
+	}
 
 	printf("MPG to KML: %.2lf\n",mpg2kml(mpg));
 	printf("MPG to LPHM: %.2lf\n",mpg2lphm(mpg));
+	
+	clear();
 
 	printf("Enter an LPH value\n");
-	scanf("%lf",&lph);
+	 
+	while(scanf("%lf", &lph) != 1 || lph < 0){
+		printf("Invalid input! Try again\n");
+		clear();
+	}
+
 
 	printf("LPH to MPH: %.2lf\n",lph2mpg(lph));
 
