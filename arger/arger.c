@@ -99,17 +99,17 @@ int parse_clarg(char* clarg)
 
 int main(int argc, char* argv [])
 {
-	int arg_code;
+	int arg_code; /* Code associated with the first clarg passed to the program */
 	
-	if (argc <= 2)
+	if (argc <= 2) /* If no additional clargs are provided past the first flag */
 	{
-		printf("Not enough arguments!\n");
-		return(-1);
+		printf ("Not enough arguments!\n");
+		return -1;
 	}
 
-	arg_code = parse_clarg (argv[1] + 1);
+	arg_code = parse_clarg (argv[1] + 1); /* Parse initial flag */
 
-	for (int i = 2; i < argc; i++){
+	for (int i = 2; i < argc; i++){ /* Call corresponding function on remaining clargs */
 		switch (arg_code) {
 			case 1:
 				cap_all(argv[i]);
@@ -122,10 +122,11 @@ int main(int argc, char* argv [])
 				break;
 			default:
 				printf("Invalid argument!");
+				return -1;
 		}
-		putchar(' ');
+		putchar (' ');
 	}
 
-	putchar('\n');
+	putchar ('\n');
 	return 0;
 }
