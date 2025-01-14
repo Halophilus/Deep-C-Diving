@@ -1,15 +1,14 @@
 /*
- * learnc.c / Program in C
+ * mpg2km.c / Source file for mpg2km header
  *
  * Ben Henshaw / CS5600 / Northeastern University
  * Spring 2025 / 1/13/2025
  *
- * For converting gas consumption rates between imperial and metric
+ * Functions for converting gas consumption rates between imperial and metric
  */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "mpg2km.h"
 
 #define MPG2KML 0.425144 /* Miles per gal. to km. per liter factor */
 #define LPH2MPG 0.02352 /* L. per 100km to MPG */
@@ -81,27 +80,3 @@ double lph2mpg(double lph)
 	return lph * LPH2MPG;
 }
 
-/* Validates user input for the above functions */
-int main()
-{
-	double mpg;
-	double lph;
-
-	printf ("Enter an MPG value\n");
-	
-	mpg = valid_double_input ();
-
-	printf ("MPG to KML: %.2lf\n", mpg2kml (mpg));
-	printf ("MPG to LPHM: %.2lf\n", mpg2lphm (mpg));
-	
-	clear ();
-
-	printf ("Enter an LPH value\n");
-	 
-	lph = valid_double_input ();
-
-
-	printf ("LPH to MPH: %.2lf\n", lph2mpg (lph));
-
-	return 0;
-}
