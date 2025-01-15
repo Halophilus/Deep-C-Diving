@@ -101,9 +101,9 @@ int main(int argc, char* argv [])
 {
 	int arg_code; /* Code associated with the first clarg passed to the program */
 	
-	if (argc <= 2) /* If no additional clargs are provided past the first flag */
+	if (argc <= 2 || *argv[1] != '-') /* Insufficient / invalid clargs */
 	{
-		printf ("Not enough arguments!\n");
+		printf ("Command syntax error!\n");
 		return -1;
 	}
 
@@ -121,7 +121,7 @@ int main(int argc, char* argv [])
 				cap_first(argv[i]);
 				break;
 			default:
-				printf("Invalid argument!");
+				printf("Invalid argument!\n");
 				return -1;
 		}
 		putchar (' ');
