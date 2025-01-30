@@ -1,5 +1,5 @@
 /*
- * genrand.c / Random Number Generation and Encryption (Part 1)
+ * genRand.c / Random Number Generation and Encryption (Part 1)
  *
  * Ben Henshaw / C5600 / Northeastern University
  * Spring 2025 / January 27, 2025
@@ -13,6 +13,8 @@
 #include <time.h>
 #include <inttypes.h>
 #include <math.h>
+#include <string.h>
+#define MAX_FILENAME_LENGTH 32
 
 /*
  * Struct:	xorwow_state
@@ -89,8 +91,8 @@ uint32_t* generate_seeds(void)
 	
 	if (seeds == NULL)
 	{
-		printf("Error allocating memory for genrand.generate_seeds()\n");
-		exit(0);
+		printf("Error allocating memory for genRand.generate_seeds()\n");
+		exit(1);
 	}
 
 	// Pull random values from the environment
@@ -186,31 +188,106 @@ int genRand(int lower, int upper)
 	return lower + (int)(generate_value(upper - lower, &global_state)); 
 }
 
+/*
+ * Function: syntax_error
+ * --------------------------
+ *  Exits the program and prints an error message upon syntax error
+ */
+void syntax_error(void)
+{
+	printf("Syntax error! genRand [NUMBER] [FILENAME] [-a]");
+}
+
+/*
+ * Function:	write_rand_to_file
+ * -------------------------------
+ * Writes a select amount of random integers to file.
+ *
+ * filename: string of filename to write 
+ * mode: string of file mode
+ * 	w: (default) new file or overwrite of existing file
+ * 	a: append to existing file
+ * num_val: integer value of quantity of numbers to be generated
+ */
+void write_rand_to_file(char *filename, char *mode, int num_val)
+{
+	FILE *fp;
+
+	fp = fopen(filename, mode);
+
+	if (fp == NULL) 
+	{
+		printf("Failure opening file in genRand.write_rand_to_file");
+		exit(1);
+	}
+
+	for ( int i = 0; i < num_val; i++ )
+	{
+		fputc( 48 + genRand(0,9), fp ); 
+	}
+
+	if ( fclose(fp) == EOF )
+	{
+		printf("Failure closing file in genRand.write_rand_to_file");
+		exit(1);
+	}
+}
+
 int main(int argc, char* argv [])
 {
 	global_state = *new_xorwow_state();
 	int num_values;
-	
+	char *file_mode;
+	char filename[MAX_FILENAME_LENGTH];
+
+	if ( argc > 4 )
+	{
+		syntax_error();
+		return(1);
+	}
+
+	// If no arguments are passed, print one integer between 0 and UINT32_MAX
 	if ( argc == 1 )
 	{
-		printf("%d", genRand(0, UINT32_MAX);
-		exit(0);
+		printf("%d\n", genRand( 0, 100 ));
+		return (0);
 	}
-       	if (scanf("%d", &num_values) != 1)
-		printf("Syntax error! genrand [NUMBER] [FILENAME] [-a]");
 	
+	// Set the number of values to be generated
+	num_values = atoi(argv[1]);
+
+	// If only one number is provided, print that number of random integers to console
 	if ( argc == 2 ) 
 	{
-		
+		for(int i = 0; i < num_values; i++)
+		{
+			printf("%d", genRand(0,9));
+		}		
+		printf("\n");
+		return (0);
 	}
 
-	if
-	if (scanf("%d", &num_values) != 1)
-		printf("Syntax error! genrand [NUMBER] [FILENAME] [-a]");
-	
+	// Set file mode to write and pull filename
+	file_mode = "w";
+	strcpy(filename, argv[2]);
+	filename[MAX_FILENAME_LENGTH - 1] = '\0'; // Add null terminator in case of buffer overflow
 
-	for (int i = 0; i < 100; i++)
-		printf("%d\n",(int)(generate_value(100,&global_state)));	
-	printf("%d",some_value);
-	return 0;
+	// Check to see if 4 arguments have been passed
+	if ( argc == 4 )
+	{
+		// Unless the optional '-a' argument is invoked
+		if ( strcmp( argv[3] , "-a" ) == 0 )
+		{
+			file_mode = "a"; // Then set it to append values
+		}
+	       	else 
+		{
+			syntax_error(); // Throw an error if an invalid argument is passed
+			return (1);
+		}
+	}
+	
+	// Write num_values of random integers to file
+	write_rand_to_file(filename, file_mode, num_values);	
+	return (0);
 }
