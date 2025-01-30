@@ -35,7 +35,48 @@ struct table
 
 /* Function:	find_value
  * --------------------------
- *  Find the 
+ *  Find the value corresponding to a given key in a map using linear search
+ *
+ *  target_value: value to be located
+ *  current_table: table containing coded alphabet
+ *
+ *  returns: value character 
+ */
+char find_value(char target_value, struct table *current_table)
+{
+	// For all of the values stored in the coded_alphabet
+	for (int i = 0; i < 26; i++)
+	{
+		// If the target key is found in the table
+		if ( (*(current_table->coded_alphabet + i)).value == target_value )
+		       return (*(current_table->coded_alphabet + i)).key; // Return the value
+	}
+	
+	return ' '; // Return ' ' if not found
+}
+
+
+/* Function:	find_key
+ * --------------------------
+ *  Find the value corresponding to a given key in a map using linear search
+ *
+ *  target_key: key to be located
+ *  current_table: table containing coded alphabet
+ *
+ *  returns: value character 
+ */
+char find_key(char target_key, struct table *current_table)
+{
+	// For all of the values stored in the coded_alphabet
+	for (int i = 0; i < 26; i++)
+	{
+		// If the target key is found in the table
+		if ( (*(current_table->coded_alphabet + i)).key == target_key )
+		       return (*(current_table->coded_alphabet + i)).value; // Return the value
+	}
+	
+	return ' '; // Return ' ' if not found
+}
 
 /*Function:	generate_table
  * --------------------------
@@ -82,6 +123,31 @@ void print_table(struct table *current_table)
 	}
 }
 
+/*Function:	filter_chars
+ * --------------------------
+ *  Takes a character, and converts it to upper case if lowercase, or to an
+ *  empty char if another ASCII character
+ *
+ *  current_char: character to be converted
+ *
+ *  returns: modified char
+ */
+char filter_char(char current_char)
+{
+	// Filter input to only uppercase letters
+	if (current_char >= 'a' && 'z' >= current_char) // If current_char is lowercase
+	{
+		return current_char - 32; // Convert it to upper case
+	} else if (current_char >= 'A' && 'Z' >= current_char) // current_char is upper
+	{
+		return current_char; // Do nothing, creates a condition to catch OoB chars
+	} else
+	{
+		return ' ';// Return a space if not alpha
+	}
+	
+}
+
 /*Function:	decode_char
  * --------------------------
  * Takes a 1-indexed row and column value and returns the corresponding char
@@ -101,6 +167,8 @@ char decode_char(int row, int col)
 		printf("Row: %d, Col: %d", row, col);
 		return (32);
 	}
+	
+	printf("Decoding char for %d x %d", row, col);
 
 	// Correct for zero indexing
 	col--;
@@ -160,15 +228,10 @@ char* encode_char(char character)
 		printf("Failed to allocate memory for string in polybius.encode_char");
 		exit(1);
 	}
+	
+	character = filter_char(character); // Clamp character to uppercase letters
 
-	// Filter input to only uppercase letters
-	if (character >= 'a' && 'z' >= character) // If character is lowercase
-	{
-		character -= 32; // Convert it to upper case
-	} else if (character >= 'A' && 'Z' >= character) // character is upper
-	{
-		// Do nothing, creates a condition to catch OoB chars
-	} else
+	if (character == ' ')// If the character is undefined
 	{
 		strcpy(coded, " ");
 		return coded;// Return a space if not alpha
@@ -221,18 +284,105 @@ char* encode_char(char character)
  */
 char* pbEncode(const char *plaintext, struct table *custom_table)
 {
-	char* encoded_string;
-	int i
+	char *encoded_string; // Final result stored here
+	char *polybius_word; // string containing polybius number for current_char
+	char current_char; // the current_char being processed
+	int cursor = 0; // Used for iterating through plaintext
 
 	encoded_string = (char*) malloc( MAX_STRING * sizeof( char ));
+	if (encoded_string == NULL)
+	{
+		printf("Error allocating memory in polybius.pbEncode\n");
+		exit(1);
+	}
 
-	while (*(plaintext + i
+	while (*(plaintext + cursor) != '\0')
+	{
+		current_char = *(plaintext + cursor);
+		current_char = filter_char(current_char); // Convert chars to uppercase
+		current_char = find_value(current_char, custom_table); // Map to table
+		polybius_word = encode_char(current_char);
+		strcat(encoded_string, polybius_word);
+		cursor++;	
+	}
+
+	return encoded_string;
+}
+
+/* Function:	pbDecode
+ * --------------------------
+ *  Decodes a string that has been encoded using a table and the Polybius
+ *  cipher
+ *
+ *  plaintext: encoded string
+ *  used_table: the table originally used to map the characters
+ *
+ *  returns: the decoded string
+ */
+char* pbDecode(const char *plaintext, struct table *used_table)
+{
+	int row; // Positional data on Polybius cipher
+	int col;
+	char current_char;
+
+	char *decoded_string; // Decoded result here
+	int code_cursor = 0; // Keeps place in each string
+	int decode_cursor = 0; 
+
+	decoded_string = (char*) malloc(MAX_STRING * sizeof(char));
+	if (decoded_string == NULL)
+	{
+		printf("Error allocating memory in polybius.pbDecode\n");
+		exit(1);
+	}
+
+	// Iterate through the encoded string
+	while (*(plaintext + code_cursor) != '\0')
+	{
+		// If a space is encountered
+		if ( *(plaintext + code_cursor) == ' ' )
+		{
+			printf("Space found \n");
+			*(decoded_string + decode_cursor) = ' ';
+			code_cursor++;
+			decode_cursor++;
+			continue;
+		}
+		
+		// Extract col and row data from polybius word
+		row = *(plaintext + code_cursor) - 48;
+		col = *(plaintext + code_cursor + 1) - 48;
+
+		// Decode the char with both ciphers
+		current_char = decode_char(row, col);
+		current_char = find_key(current_char, used_table);
+
+		// Add current_char to decoded_string
+		*(decoded_string + decode_cursor) = current_char;
+		
+		// Iterate each cursor
+		code_cursor += 2; // Moves to the next Polybius word
+		decode_cursor++;
+	}
+
+	//	*(decoded_string + decode_cursor) = '\0'; // Terminate the string
+	return decoded_string;
 }
 
 int main(int argc, char* argv)
 {
+	char *str = "He lived as a devil, eh?";
+	char *encoded_string;
+	char *decoded_string;
 	struct table new_table = *generate_table(3);
 	print_table(&new_table);
+
+	encoded_string = pbEncode(str, &new_table);
+	printf("%s\n", encoded_string);
+	
+	decoded_string = pbDecode(encoded_string, &new_table);
+	printf("%s\n", decoded_string);
+
 	return (0);
 
 }
