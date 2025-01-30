@@ -119,7 +119,6 @@ void print_table(struct table *current_table)
 	{
 		current_key = (*(current_table->coded_alphabet + i)).key;
 		current_value = (*(current_table->coded_alphabet + i)).value;
-		printf("%c to %c\n", current_key, current_value);
 	}
 }
 
@@ -163,12 +162,9 @@ char decode_char(int row, int col)
 	// Test if value falls within defined range of the table
 	if (row > 5 || col > 5)
 	{
-		printf("Value pair out of bounds of defined square in polybius.decode_char\n");
-		printf("Row: %d, Col: %d", row, col);
 		return (32);
 	}
 	
-	printf("Decoding char for %d x %d", row, col);
 
 	// Correct for zero indexing
 	col--;
@@ -342,7 +338,6 @@ char* pbDecode(const char *plaintext, struct table *used_table)
 		// If a space is encountered
 		if ( *(plaintext + code_cursor) == ' ' )
 		{
-			printf("Space found \n");
 			*(decoded_string + decode_cursor) = ' ';
 			code_cursor++;
 			decode_cursor++;
@@ -368,7 +363,7 @@ char* pbDecode(const char *plaintext, struct table *used_table)
 	//	*(decoded_string + decode_cursor) = '\0'; // Terminate the string
 	return decoded_string;
 }
-
+/*
 int main(int argc, char* argv)
 {
 	char *str = "He lived as a devil, eh?";
@@ -386,3 +381,4 @@ int main(int argc, char* argv)
 	return (0);
 
 }
+*/
