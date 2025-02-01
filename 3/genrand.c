@@ -26,7 +26,7 @@
  */ 
 struct xorwow_state
 {
-	uint32_t x[5];
+	uint32_t seeds[5];
 	uint32_t counter;
 };
 
@@ -44,30 +44,30 @@ struct xorwow_state global_state;
 uint32_t xorwow(struct xorwow_state *state)
 {
 	// Pull the final seed from the seed array
-	uint32_t t = state->x[4];
+	uint32_t initial_first_seed = state->seeds[4];
 
 	// Pull the first seed from the seed array
-	uint32_t s = state->x[0];
+	uint32_t initial_final_seed = state->seeds[0];
 
 	// Arbitrarily rotate the seeds 
-	state->x[4] = state->x[3]; 
-	state->x[3] = state->x[2];
-	state->x[2] = state->x[1];
-	state->x[1] = s;
+	state->seeds[4] = state->seeds[3]; 
+	state->seeds[3] = state->seeds[2];
+	state->seeds[2] = state->seeds[1];
+	state->seeds[1] = initial_final_seed;
 
 	// Bitshift XOR operations to simulate randomness
-	t ^= t >> 2; // Perform XOR between t and bitshifted t
-	t ^= t << 1; 
-	t ^= s ^ (s << 4); // XOR between t and (s and bitshifted s)
+	 initial_first_seed ^= initial_first_seed >> 2; // Perform XOR between initial_first_seed and bitshifted t
+	 initial_first_seed ^= initial_first_seed << 1; 
+	 initial_first_seed ^= initial_final_seed ^ (initial_final_seed << 4); // XOR between initial_first_seed and (s and bitshifted s)
 	
 	// Pass the mutated value back into the array of seeds
-	state->x[0] = t;
+	state->seeds[0] = initial_first_seed;
 
 	// Iterate the RNG counter
 	state->counter += 362437;
 
 	// Return a PRNG value
-	return t + state->counter;	
+	return initial_first_seed + state->counter;	
 }
 
 
@@ -151,7 +151,7 @@ struct xorwow_state* new_xorwow_state(void)
 
 	// Add seeds incrementally
 	for(int i = 0; i < 5; i++)
-		new_state->x[i] = *(new_seeds + i);
+		new_state->seeds[i] = *(new_seeds + i);
 
 	new_state->counter = 0;
 
