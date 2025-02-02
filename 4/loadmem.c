@@ -51,7 +51,7 @@ dyn_block_t *alloc_dyn_block(int size)
 	
 	// Allocate memory to the heap
 	dyn_block_ptr = (dyn_block_t*)malloc(sizeof(dyn_block_t));
-	dyn_block_ptr->int_array = (int *)calloc(0, size * sizeof(int));
+	dyn_block_ptr->int_array = (int *)calloc(size, size * sizeof(int));
 
 	// Determine memory allocation 
 	if (dyn_block_ptr == NULL)
@@ -98,7 +98,6 @@ int count_lines(FILE* fp)
 	for (c = getc(fp); c != EOF; c = getc(fp))
         	if (c == '\n') // Increment count if newline
             		count++;
-	rewind(fp); // Rewind the file pointer
 	return count;
 }
 
@@ -149,8 +148,9 @@ int *string_to_array(char *string)
 	while (token != NULL)
 	{
 		sscanf(token, "%d", value);
-		*(int_array + i++) = *value;
+		int_array[i] = *value;
 		token = strtok(NULL, " ");
+		i++;
 	}
 
 	return int_array;
@@ -165,14 +165,17 @@ int *string_to_array(char *string)
 // returns: dyn_block_t pointer
 dyn_block_t *string_to_dyn_block(char *string)
 {
-	int *new_int_array = string_to_array(string);
-	int new_size = count_ints(string);
 
+	int new_size = count_ints(string);
 	
+	printf("new_size: %d\n", new_size);
+	int *new_int_array = string_to_array(string);
+	
+
 
 	dyn_block_t *new_dyn_block = alloc_dyn_block(new_size);
 	store_mem_blk(new_dyn_block, new_int_array);
-
+	
 	return new_dyn_block;
 }
 // Function:	parse_to_dyn_block
@@ -195,15 +198,28 @@ dyn_block_t** parse_to_dyn_block(char *filename)
 
 	while(fgets(line_buffer, MAX_LINE, fp) != NULL)
 	{
+		
 		printf("%s\n",line_buffer);
-		current_block = string_to_dyn_block(line_buffer);
-		block_list[i++] = current_block;
+		//current_block = string_to_dyn_block(line_buffer);
+		//current_block = string_to_dyn_block(line_buffer);
+		//block_list[i++] = current_block;
 	}
-
+	
+	fclose(fp);
 	return block_list;
 }
 
 int main(void)
 {
+	char *test_string = "1 2 3 4 5 6 7 8";
+	int count = count_ints(test_string);
+	int *int_array = string_to_array(test_string);
+
+	print_array(int_array, count);
+	
+	dyn_block_t *new_dyn_block = string_to_dyn_block(test_string);
+	print_dyn_block(new_dyn_block);
+
+	
 	parse_to_dyn_block("blocks.data");
 }
