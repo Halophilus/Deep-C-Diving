@@ -123,7 +123,6 @@ int count_ints(char *string)
 		token = strtok(NULL, " ");
 	}
 	// Tokenize the string one at a time
-	printf("%d\n", count);
 	return count;	
 }
 
@@ -168,10 +167,7 @@ dyn_block_t *string_to_dyn_block(char *string)
 
 	int new_size = count_ints(string);
 	
-	printf("new_size: %d\n", new_size);
 	int *new_int_array = string_to_array(string);
-	
-
 
 	dyn_block_t *new_dyn_block = alloc_dyn_block(new_size);
 	store_mem_blk(new_dyn_block, new_int_array);
@@ -196,30 +192,38 @@ dyn_block_t** parse_to_dyn_block(char *filename)
 	dyn_block_t** block_list = (dyn_block_t**)malloc(lines_count * sizeof (dyn_block_t *));
 	dyn_block_t* current_block = (dyn_block_t*)malloc(sizeof (dyn_block_t));
 
+	rewind(fp);
 	while(fgets(line_buffer, MAX_LINE, fp) != NULL)
 	{
-		
-		printf("%s\n",line_buffer);
-		//current_block = string_to_dyn_block(line_buffer);
-		//current_block = string_to_dyn_block(line_buffer);
-		//block_list[i++] = current_block;
+		current_block = string_to_dyn_block(line_buffer);
+		block_list[i++] = current_block;
 	}
 	
 	fclose(fp);
 	return block_list;
 }
 
+// Function:	print_dyn_block_array
+// -----------------------------------
+// Iterates through an array of dyn_blocks and prints each one
+//
+// block_array: dyn_block pointer pointer
+void print_dyn_block_array(dyn_block_t** block_array, int size)
+{
+	for (int i = 0; i < size; i++)
+	{
+		print_dyn_block(*(block_array + i));
+	}
+}
+
 int main(void)
 {
-	char *test_string = "1 2 3 4 5 6 7 8";
-	int count = count_ints(test_string);
-	int *int_array = string_to_array(test_string);
-
-	print_array(int_array, count);
+	// Parse the plaintext file into dyn_block_t instances	
+	dyn_block_t** block_array = parse_to_dyn_block("blocks.data");
 	
-	dyn_block_t *new_dyn_block = string_to_dyn_block(test_string);
-	print_dyn_block(new_dyn_block);
+	FILE* fp = fopen("blocks.data", "r"); // Open to count the lines in the file
+	print_dyn_block_array(block_array, count_lines(fp));
+	fclose(fp);
 
-	
-	parse_to_dyn_block("blocks.data");
+	return 0;
 }
