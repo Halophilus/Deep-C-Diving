@@ -139,11 +139,21 @@ void push_queue(queue_t* queue, void* element)
 // node: some node_t within queue
 void remove_node(queue_t* queue, node_t* node)
 {
+	// Cannot perform action on an empty queue
+	if (get_queue_size(queue) == 0)
+	{
+		printf("queue.remove_node() called on an empty queue\n");
+		return;
+	}
+
 	// Returns an empty queue
 	if (get_queue_size(queue) == 1)
 	{
-		// todo: free the queue
-		queue* = create_queue;
+		free(node);
+		queue->front = NULL;
+		queue->back = NULL;
+		queue->size = 0;
+		return;
 	}
 
 	// Store locational context
@@ -166,6 +176,8 @@ void remove_node(queue_t* queue, node_t* node)
 	{
 		queue->back = prev_node;
 	}
+
+	free(node);
 }
 
 // Function:	pop_queue
@@ -208,7 +220,7 @@ process_t* remove_process(queue_t* queue)
 	// Pull data from the front element in the queue
 	current_node = queue->front;
 	priority_node = current_node;
-	max_process = (process_t *)(current_node->data)	
+	max_process = (process_t *)(current_node->data);	
 	priority_max = max_process->priority;
 
 	// For all other circumstances
@@ -224,13 +236,13 @@ process_t* remove_process(queue_t* queue)
 		{
 			priority_max = current_process->priority;
 			priority_node = current_node;
-			max_process = current_process
+			max_process = current_process;
 		}
 	}
 	
 	// Remove the node with the highest priority
 	remove_node(queue, priority_node);
-	return max_process
+	return max_process;
 }	
 
 
