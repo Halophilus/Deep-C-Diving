@@ -8,6 +8,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 // Struct:	process_t
 // ----------------------
@@ -45,6 +46,31 @@ typedef struct
 
 	unsigned int size;
 } queue_t;
+
+// Function:	create_process
+// ---------------------------
+// Generates a process from input and returns a process_t*
+//
+// identifier: integer identifier
+// name: string name
+// runtime: long runtime
+// priority: unsigned int priority
+//
+// returns: process_t*
+process_t* create_process(int identifier, char *name, long runtime, unsigned int priority)
+{
+	char *new_name = (char *)malloc(32 * sizeof(char));
+	memcpy(new_name, name, 32);
+
+	process_t* new_process = (process_t *)malloc(sizeof(process_t));
+
+	new_process->identifier = identifier;
+	new_process->name = new_name;
+	new_process->runtime = runtime;
+	new_process->priority = priority;
+
+	return new_process;
+}
 
 // Function:	create_node
 // ------------------------

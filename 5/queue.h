@@ -8,6 +8,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 // Struct:	process_t
 // ----------------------
@@ -61,6 +62,18 @@ node_t* create_node(void* data);
 //
 // returns: queue_t* of empty circular queue
 queue_t* create_queue(void);
+
+// Function:    create_process
+// ---------------------------
+// Generates a process from input and returns a process_t*
+//
+// identifier: integer identifier
+// name: string name
+// runtime: long runtime
+// priority: unsigned int priority
+//
+// returns: process_t*
+process_t* create_process(int identifier, char *name, long runtime, unsigned int priority);
 
 // Function:	get_queue_size
 // ---------------------------
