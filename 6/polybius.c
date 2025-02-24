@@ -363,22 +363,3 @@ char* pbDecode(const char *plaintext, struct table *used_table)
 	//	*(decoded_string + decode_cursor) = '\0'; // Terminate the string
 	return decoded_string;
 }
-/*
-int main(int argc, char* argv)
-{
-	char *str = "He lived as a devil, eh?";
-	char *encoded_string;
-	char *decoded_string;
-	struct table new_table = *generate_table(3);
-	print_table(&new_table);
-
-	encoded_string = pbEncode(str, &new_table);
-	printf("%s\n", encoded_string);
-	
-	decoded_string = pbDecode(encoded_string, &new_table);
-	printf("%s\n", decoded_string);
-
-	return (0);
-
-}
-*/

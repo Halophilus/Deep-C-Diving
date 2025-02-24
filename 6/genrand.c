@@ -30,7 +30,6 @@ struct xorwow_state
 	uint32_t counter;
 };
 
-struct xorwow_state global_state;
 /*
  * Function: xorwow
  * -----------------------
@@ -158,6 +157,13 @@ struct xorwow_state* new_xorwow_state(void)
 	return new_state;
 }
 
+/* 
+ * Variable:	global_state;
+ * --------------------------
+ *  Defines the xorwow_state for the current session
+ */
+struct xorwow_state global_state;
+
 /*
  * Function:	generate_value
  * ---------------------------
@@ -247,7 +253,7 @@ void write_rand_to_file(char *filename, char *mode, int num_val)
  */
 char gen_char(void)
 {
-	return (char) genRand(65, 90);
+	return (char) genRand(65, 91);
 }
 
 /*

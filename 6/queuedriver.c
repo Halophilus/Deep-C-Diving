@@ -7,13 +7,14 @@
  * A rewrite of queuetest.c to suit this week's application
  */
 #include "queue.h"
-#include "polybius.h"
 
 // NEW 2/23
 #include <unistd.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include <time.h>
 #include "genrand.h"
+#include "polybius.h"
 
 // Function:	print_queue
 // ------------------------
@@ -67,6 +68,25 @@ queue_t* load_queue(char *filename)
 	return new_queue;
 }
 
+// Function:	generate_filename
+// ------------------------------
+// Generates a new filename based on the time
+//
+// returns: string customized to current time
+char* generate_filename(void)
+{
+	time_t timer;
+	char *filename = (char *)malloc(sizeof(char)*512);
+	struct tm* tm_info;
+
+	time(&timer);
+	tm_info = localtime(&timer);
+
+	strftime(filename, 256, "output_%m%d_%H%M%S.txt", tm_info);
+	
+	return filename;
+}
+
 // Function:	process_queue
 // --------------------------
 // Processes strings in a queue in simultaneous batches until all elements in
@@ -74,13 +94,15 @@ queue_t* load_queue(char *filename)
 //
 // queue: some queue_t instance
 // batch_size: number of processes to be run simultaneously
-// file_name: name of the output file
-void process_queue(queue_t *queue, int batch_size, char *file_name)
+void process_queue(queue_t *queue, int batch_size)
 {
-	FILE *fp = fopen(file_name, "a");
+	char *filename = generate_filename();
+	FILE *fp = fopen(filename, "a");
+	free(filename);
+
 	if (fp == NULL)
 	{
-		fprintf(stderr, "Failure to open file %s in queuedriver.process_queue\n", file_name);
+		fprintf(stderr, "Failure to open file %s in queuedriver.process_queue\n", filename);
 		exit(1);
 	}
 
@@ -137,16 +159,15 @@ void process_queue(queue_t *queue, int batch_size, char *file_name)
 			close (pipe_fd[1]); // Close the writing end
 			
 			// Read output from child process;
-			char buffer[512];
+			char *buffer = calloc(1024, sizeof(char));
 			ssize_t bytes_read;
-			while ( (bytes_read = read(pipe_fd[0], buffer, sizeof(buffer) - 1) )
-					> 0 )
+			while ((bytes_read = read(pipe_fd[0], buffer, sizeof(buffer) - 1)) > 0) 
 			{
-				buffer[bytes_read] = '\0';
-				fputs(buffer, fp);
-			}
-			
+                		buffer[bytes_read] = '\0';
+                		fputs(buffer, fp); // Append to output file
+            		}
 			// Close reading end of the pipe and wait for child to finish
+			free(buffer);
 			close(pipe_fd[0]);
 			wait(NULL);
 		}
@@ -162,13 +183,20 @@ int main(void)
 {
 	// Generate a text file containing a sequence of random strings.
 	global_state = *new_xorwow_state();
+	remove("string_file.txt");
 	append_strings("string_file.txt", 10000);
 
 	// Convert the contents of this file into a string
 	queue_t* string_queue = load_queue("string_file.txt");
+	
+	// Demonstrate the cipher used in this driver 
+	struct table *new_table = generate_table(5);
+	printf("CAESAR CIPHER KEY: \n");
+	printf("Sphinx of black quartz, hear my vow\n");
+	printf("%s\n", pbEncode("Sphinx of black quartz, hear my vow", new_table));
 
 	// Use multiprocessing to encode each string in batches of 100
-	process_queue(string_queue, 100, "output_file");
+	process_queue(string_queue, 100);
 
 	return 0;
 }

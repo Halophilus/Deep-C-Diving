@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
 	if (argc < 2)
 	{
 		// Use fprintf to avoid sending error message to stdout
-		fprintf(stderr, "Usage: an array of strings", argv[0]);
+		fprintf(stderr, "%s usage: [ARRAY OF STRINGS]", argv[0]);
 		exit(1);
 	}
 	
@@ -27,9 +27,10 @@ int main(int argc, char *argv[])
 	{
 		char *string = argv[i];
 		char *encrypted_string = pbEncode(string, new_table);
-
-		printf("%s\n", encrypted_string);
-		free(encrypted_string);
+		printf("STRING %d\n", i);
+		printf("ORIGINAL: %s", string);
+		printf("CONVERTED: %s\n\n", encrypted_string);
+		//free(encrypted_string);
 	}
 	return 0;
 }

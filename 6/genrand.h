@@ -30,7 +30,13 @@ struct xorwow_state
 	uint32_t counter;
 };
 
-struct xorwow_state global_state;
+/*
+ * Variable:	global_state
+ * -------------------------
+ * Defines the xorwow state for the current session
+ */
+extern struct xorwow_state global_state;
+
 /*
  * Function: xorwow
  * -----------------------
