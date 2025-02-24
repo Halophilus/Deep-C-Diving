@@ -12,21 +12,23 @@
 // NEW 2/23
 #include <unistd.h>
 #include <sys/wait.h>
+#include <fcntl.h>
+#include "genrand.h"
 
-// Used in implementation of
-typedef char* (*Conversion)(char*, char*);
-
-// Function:	print_process
+// Function:	encode_string
 // --------------------------
-// Prints the details of a process_t
+// Uses a polybius cipher to encode a string, with a table offset indicated by table_number
 //
-// process: some process_t*
-void print_process(process_t* process)
+// input: some string
+// table_number: conversion table offset
+//
+// returns: encoded string 
+char *encode_string(char *input, int table_number)
 {
-	printf("Identifier: %d\n", process->identifier);
-	printf("Name: %s\n", process->name);
-	printf("Runtime: %ld\n", process->runtime);
-	printf("Priority: %d\n", process->priority);
+	struct table new_table = *generate_table(table_number);
+	char *encoded_string = pbEncode(input, &new_table);
+
+	return encoded_string;
 }
 
 // Function:	print_queue
@@ -81,69 +83,108 @@ queue_t* load_queue(char *filename)
 	return new_queue;
 }
 
-/* Function:	for_each NEW 2/23
- * ---------------------
- *  For each element in a queue processed in batches of size,
- *  perform function, then pipe the output to some file
- *
- *  input_queue: some queue
- *  size: number of processes to generate per batch
- *  function: some function to be performed on each value
- *
- *  returns: a queue containing the output data
-*/
-void for_each(queue_t* input_queue, int size, Conversion function)
+// Function:	process_queue
+// --------------------------
+// Processes strings in a queue in simultaneous batches until all elements in
+// the queue have been processed
+//
+// queue: some queue_t instance
+// batch_size: number of processes to be run simultaneously
+// file_name: name of the output file
+void process_queue(queue_t *queue, int batch_size, char *file_name)
 {
-	int pipefd[2]; // Array containing file descriptors for start and end of pipe
-	pid_t pid;
-	char buffer[512];
-
-	if (pipe(pipefd) == -1)
+	FILE *fp = fopen(file_name, "a");
+	if (fp == NULL)
 	{
-		printf("Error creating pipe in queuedriver.for_each\n");
+		perror("Failure to open file %s in queuedriver.process_queue\n", file_name);
 		exit(1);
 	}
 
-	for (int i = 0; i < size; 
-}	
+	while (get_queue_size(queue) > 0)
+	{
+		char *strings[batch_size];
+		int i; 
 
+		// Accumulate up to 100 strings into an array
+		for (i = 0;
+		     i < batch_size && get_queue_size(queue) > 0;
+		     i++)
+			strings[i] = (char *)pop_queue(queue);
+
+		// Create channel of communication between parent and child
+		int pipe_fd[2];
+		if (pipe(pipe_fd) == -1)
+		{
+			perror("Failure creating pipe in queuedriver.process_queue\n");
+			exit(1);
+		}
+
+		// Fork process, generate child
+		int pid = fork();
+		if (pid == 0) // if the current process is a child
+		{
+			// Close the reading end of the pipe
+			close(pipe_fd[0]);
+
+			// Redirect stdout to pipe
+			dup2(pipe_fd[1], STDOUT_FILENO);
+			
+			// Close original writing end of the pipe;
+			close(pipe_fd[1]);
+
+			// Prepare args for cipher call
+			char *args[i + 2];
+			args[0] = "./cipher";
+			for (int j = 0; j < i; j++)
+			{
+				args[j+1] = strings[j];
+			}
+
+			args[i+1] = NULL; // Terminate command
+			
+			// Call cipher, replacing the current process's image
+			execvp(args[0], args);
+
+			// In case the call fails
+			perror("Executing cipher failed in queuedriver.process_queue()\n");
+			exit(1);
+		} else // In parent process
+		{
+			close (pipe_fd[1]); // Close the writing end
+			
+			// Read output from child process;
+			char buffer[512];
+			ssize_t bytes_read;
+			while ( (bytes_read = read(pipe_fd[0], buffer, sizeof(buffer) - 1) )
+					> 0 )
+			{
+				buffer[bytes_read] = '\0';
+				fputs(buffer, fp);
+			}
+			
+			// Close reading end of the pipe and wait for child to finish
+			close(pipe_fd[0]);
+			wait(NULL);
+		}
+
+	}
+
+	fclose(fp);
+}
+
+// NEW 2/23
+// Main method where children are created 
 int main(void)
 {
-	// Generate a 20-member queue based on data file
-	// Resultant queue should reflect contents of "processes.txt"
-	queue_t* new_queue = load_queue("processes.txt");
-	process_t* current_process;
+	// Generate a text file containing a sequence of random strings.
+	global_state = *new_xorwow_state();
+	append_strings("string_file.txt", 10000);
 
-	// Print contents
-	print_queue(new_queue);
+	// Convert the contents of this file into a string
+	queue_t* string_queue = load_queue("string_file.txt");
 
-	// Whitespace for console clarity
-	printf("\n\n\n\n");
-
-	// Remove the top 5 processes, producing a 15-member queue
-	// Should remove ProcessT, ProcessS, ProcessR, ProcessQ, and ProcessP
-	for (int i = 0; i < 5; i++)
-	{
-		current_process = remove_process(new_queue);
-		print_process(current_process);
-		printf("\n");
-	}
-
-	printf("\n\n\n\n");
-	print_queue(new_queue);
-	printf("\n\n\n\n");
-
-	// Remove the remaining 15 processes
-	// Should show them in descending order of priority
-	for (int i = 0; i < 15; i++)
-	{
-		current_process = remove_process(new_queue);
-		print_process(current_process);
-		printf("\n");
-	}
-
-	printf("\n\n\n\n");
-	print_queue(new_queue);// Should show a 0-member queue
+	// Use multiprocessing to encode each string in batches of 100
+	process_queue(string_queue, 100, "output_file");
 
 	return 0;
 }

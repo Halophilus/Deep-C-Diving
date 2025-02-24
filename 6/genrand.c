@@ -310,9 +310,3 @@ void append_strings(char* filename, int num_strings)
 		exit(1);
 	}
 }
-
-int main(void)
-{
-	global_state = *new_xorwow_state();
-	append_strings("string_file.txt", 5);
-}
