@@ -1,13 +1,15 @@
 .PHONY: clean
 
-all: clean genrand cipher
+all: clean driver cipher
 
-genrand: genrand.c
-	gcc genrand.c -o genrand -lm
+driver: queuedriver.c queue.c polybius.c genrand.c
+	gcc queuedriver.c queue.c polybius.c genrand.c -o driver -lm
 
 cipher: cipher.c polybius.c polybius.h
 	gcc cipher.c polybius.c -o cipher -lm
 
 clean:
 	rm -f *.o
-	rm -f string_file.txt
+	rm -f *.txt
+	rm -f cipher
+	rm -f driver

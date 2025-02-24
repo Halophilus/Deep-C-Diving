@@ -15,22 +15,6 @@
 #include <fcntl.h>
 #include "genrand.h"
 
-// Function:	encode_string
-// --------------------------
-// Uses a polybius cipher to encode a string, with a table offset indicated by table_number
-//
-// input: some string
-// table_number: conversion table offset
-//
-// returns: encoded string 
-char *encode_string(char *input, int table_number)
-{
-	struct table new_table = *generate_table(table_number);
-	char *encoded_string = pbEncode(input, &new_table);
-
-	return encoded_string;
-}
-
 // Function:	print_queue
 // ------------------------
 // Prints all the processes stored within node_t of queue_t
@@ -96,7 +80,7 @@ void process_queue(queue_t *queue, int batch_size, char *file_name)
 	FILE *fp = fopen(file_name, "a");
 	if (fp == NULL)
 	{
-		perror("Failure to open file %s in queuedriver.process_queue\n", file_name);
+		fprintf(stderr, "Failure to open file %s in queuedriver.process_queue\n", file_name);
 		exit(1);
 	}
 
@@ -115,7 +99,7 @@ void process_queue(queue_t *queue, int batch_size, char *file_name)
 		int pipe_fd[2];
 		if (pipe(pipe_fd) == -1)
 		{
-			perror("Failure creating pipe in queuedriver.process_queue\n");
+			fprintf(stderr, "Failure creating pipe in queuedriver.process_queue\n");
 			exit(1);
 		}
 
@@ -146,7 +130,7 @@ void process_queue(queue_t *queue, int batch_size, char *file_name)
 			execvp(args[0], args);
 
 			// In case the call fails
-			perror("Executing cipher failed in queuedriver.process_queue()\n");
+			fprintf(stderr, "Executing cipher failed in queuedriver.process_queue()\n");
 			exit(1);
 		} else // In parent process
 		{
