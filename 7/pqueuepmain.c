@@ -55,21 +55,32 @@ void main (int argc, char *argv[])
 	}
 	
 	// Add one producer
-	if (pthread_create(&t1, NULL, producer, NULL) != 0
-	 && pthread_create(&t3, NULL, producer, NULL) != 0)
+	if (pthread_create(&t1, NULL, producer, NULL) != 0)
+	{
+		perror("pthread_create");
+		exit (1);
+	}
+
+	if (pthread_create(&t3, NULL, producer, NULL) != 0)
 	{
 		perror("pthread_create");
 		exit (1);
 	}
 
 	// Add one consumer
-	if (pthread_create(&t2, NULL, consumer, NULL) != 0
-	 && pthread_create(&t4, NULL, consumer, NULL) != 0)
+	if (pthread_create(&t2, NULL, consumer, NULL) != 0)
        	{
 		perror("pthread_create");
 		exit (1);
 	}
+
 	
+	if (pthread_create(&t4, NULL, consumer, NULL) != 0)
+       	{
+		perror("pthread_create");
+		exit (1);
+	}
+
 	// Join all threads before exiting
 	pthread_join(t1, NULL);
 	pthread_join(t2, NULL);
@@ -117,7 +128,6 @@ void *producer(void *param)
 
 void *consumer(void *param)
 {
-	int i=0;
 	while (1) {
 		pthread_mutex_lock (&mut);
 		
@@ -135,12 +145,11 @@ void *consumer(void *param)
 			pthread_cond_wait (&cond, &mut);
 		
 		// Consume some element of the buffer
+		int item = buffer[num-1];
+		buffer[num-1] = 0;
 		num--;
-		int item = buffer[num];
-		buffer[num] = 0;
 		num_consumed++;
 
-		num--;
 		pthread_mutex_unlock (&mut);
 		pthread_cond_signal (&cond);
 		
