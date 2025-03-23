@@ -1,10 +1,18 @@
-.PHONY: clean
+CC = gcc
+CFLAGS = -Wall -g
+OBJ = message.o msgtest.o
 
-all: clean msgtest
+all: msgtest
 
-messagetest : message.c message.h msgtest.c
-	gcc msgtest.c message.c -o msgtest
+msgtest: $(OBJ)
+	$(CC) $(CFLAGS) -o msgtest $(OBJ)
+
+msgtest.o: msgtest.c message.h
+	$(CC) $(CFLAGS) -c msgtest.c
+
+message.o: message.c message.h
+	$(CC) $(CFLAGS) -c message.c
 
 clean:
-	rm -f *.o
-	rm -f msgtest
+	rm -f *.o msgtest
+

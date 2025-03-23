@@ -6,6 +6,11 @@
  *
  * Implementation of data structure to store a message
  */
+#include "message.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
 #define MAX_ROW_LENGTH sizeof(Message) + 32 // Include space for commas in CSV and time_t string
 #define MAX_FIELD_LENGTH 1028

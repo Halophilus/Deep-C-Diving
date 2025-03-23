@@ -4,7 +4,7 @@
  * Ben Henshaw / CS5600 / Northeastern University
  * Spring 2025 / 3/23/2025
  *
- * Data structure to store a message
+ * Header file for message handling
  */
 
 #ifndef MESSAGE_H
@@ -35,5 +35,5 @@ int update_delivered(int id);
 int get_id(void);
 void print_msg(const Message* msg);
 
-#endif
+#endif // MESSAGE_H
 
