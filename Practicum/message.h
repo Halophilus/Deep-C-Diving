@@ -6,6 +6,7 @@
  *
  * Data structure to store a message
  */
+
 #ifndef MESSAGE_H
 #define MESSAGE_H
 
