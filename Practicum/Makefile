@@ -1,18 +1,24 @@
 CC = gcc
 CFLAGS = -Wall -g
-OBJ = message.o msgtest.o
+SRC = message.c message_test.c
+OBJ = message.o message_test.o
+EXEC = message_test
 
-all: msgtest
+# Target to compile the program
+$(EXEC): $(OBJ)
+	$(CC) $(CFLAGS) -o $(EXEC) $(OBJ)
 
-msgtest: $(OBJ)
-	$(CC) $(CFLAGS) -o msgtest $(OBJ)
-
-msgtest.o: msgtest.c message.h
-	$(CC) $(CFLAGS) -c msgtest.c
-
-message.o: message.c message.h
-	$(CC) $(CFLAGS) -c message.c
-
+# Target to clean up object files, executable, and reset messages.csv with a header
 clean:
-	rm -f *.o msgtest
+	rm -f $(OBJ) $(EXEC)
+	# Reset messages.csv with the header
+	> messages.csv
+	echo "ID,Timestamp,Sender,Receiver,Content,Delivered" > messages.csv
+
+# Target to run tests
+run_tests: $(EXEC)
+	./$(EXEC)
+
+# Default target
+all: $(EXEC)
 

@@ -1,1 +1,16 @@
-id, timestamp, sender, receiver, content, delivered
+ID,Timestamp,Sender,Receiver,Content,Delivered
+1,Sun Mar 23 22:36:52 2025,Eve,Frank,Important message!,0
+2,Sun Mar 23 22:38:34 2025,Eve,Frank,Important message!,0
+3,Sun Mar 23 22:44:36 2025,Eve,Frank,Important message!,0
+4,Sun Mar 23 22:46:42 2025,Eve,Frank,Important message!,0
+5,Sun Mar 23 22:48:37 2025,Eve,Frank,Important message!,0
+6,Sun Mar 23 22:49:36 2025,Eve,Frank,Important message!,1
+7,Sun Mar 23 22:49:36 2025,Grace,Heidi,Message to deliver,0
+8,Sun Mar 23 22:50:29 2025,Eve,Frank,Important message!,0
+9,Sun Mar 23 22:50:29 2025,Grace,Heidi,Message to deliver,1
+10,Sun Mar 23 22:55:58 2025,Eve,Frank,Important message!,0
+11,Sun Mar 23 22:55:58 2025,Grace,Heidi,Message to deliver,1
+12,Sun Mar 23 22:57:12 2025,Eve,Frank,Important message!,0
+13,Sun Mar 23 22:57:12 2025,Grace,Heidi,Message to deliver,1
+14,Sun Mar 23 22:58:21 2025,Eve,Frank,Important message!,0
+15,Sun Mar 23 22:58:21 2025,Grace,Heidi,Message to deliver,1

@@ -7,13 +7,15 @@
  * Implementation of data structure to store a message
  */
 #include "message.h"
+	
+#include <time.h> 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
-#define MAX_ROW_LENGTH sizeof(Message) + 32 // Include space for commas in CSV and time_t string
+#define MAX_ROW_LENGTH sizeof(Message) + 256 // Include space for commas in CSV and time_t string
 #define MAX_FIELD_LENGTH 1028
+#define MAX_DATE_LENGTH 128
 
 // Function:	create_msg
 // -----------------------
@@ -52,6 +54,79 @@ Message* create_msg(const char* sender, const char* receiver, const char* conten
 
 	return msg;
 }
+
+// Function:	month_to_number
+// ----------------------------
+// Helper function to convert month name to month number
+//
+// month:	string subset of months
+//
+// returns: 	integer month value
+int month_to_number(const char* month) {
+    const char* months[] = {
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    };
+
+    for (int i = 0; i < 12; i++) {
+        if (strncmp(month, months[i], 3) == 0) {
+            return i;
+        }
+    }
+
+    return -1; // Invalid month
+}
+
+// Function:	strptime
+// ---------------------
+// Helper function with custom implementation of strptime from time.h
+// 
+// date_str:	String matching format
+// format:	formatting (default "%a %b %d %H:%M:%S %Y")
+// tm_out:	struct tm object for storing new time
+//
+// returns:	0 on success, -1 on failure 
+int strptime(const char* date_str, const char* format, struct tm* tm_out) {
+    if (date_str == NULL || format == NULL || tm_out == NULL) {
+        return -1; // Invalid input
+    }
+
+    char day_name[4], month_name[4], day_str[3], hour_str[3], minute_str[3], second_str[3], year_str[5];
+    int day, hour, minute, second, year, month;
+
+    // Format is: "%a %b %d %H:%M:%S %Y"
+    if (sscanf(date_str, "%3s %3s %2s %2s:%2s:%2s %4s", day_name, month_name, day_str, hour_str, minute_str, second_str, year_str) != 7) {
+        return -1; // Error in parsing
+    }
+
+    // Parse day of the month
+    day = atoi(day_str);
+
+    // Convert month name to month number
+    month = month_to_number(month_name);
+    if (month == -1) {
+        return -1; // Invalid month
+    }
+
+    // Parse hour, minute, second
+    hour = atoi(hour_str);
+    minute = atoi(minute_str);
+    second = atoi(second_str);
+
+    // Parse year
+    year = atoi(year_str);
+
+    // Populate the tm structure
+    tm_out->tm_mday = day;
+    tm_out->tm_mon = month;   // tm_mon is 0-based, so no need to adjust
+    tm_out->tm_hour = hour;
+    tm_out->tm_min = minute;
+    tm_out->tm_sec = second;
+    tm_out->tm_year = year - 1900; // tm_year is years since 1900
+
+    return 0; // Success
+}
+
 
 // Function:	parse_row
 // --------------------------
@@ -98,7 +173,7 @@ Message* parse_row(char* row)
 	// Parse and store the timestamp
 	struct tm tm;
 
-	if (strptime(fields[1], "%a %b %d %H:%M:%S %Y", &tm) == NULL)
+	if (strptime(fields[1], "%a %b %d %H:%M:%S %Y", &tm) == -1)
 	{
 		fprintf(stderr, "Error parsing string into tm object in message.parse_row: %s\n", row);
 		free(new_msg);
@@ -181,7 +256,7 @@ int store_msg(const Message* msg)
 // msg:		Message* object pointer
 //
 // returns:	String reflecting CSV entry
-char* generate_msg_string(Message* msg)
+char* generate_msg_string(const Message* msg)
 {
 	if (msg == NULL)
 	{
@@ -189,12 +264,10 @@ char* generate_msg_string(Message* msg)
 		return NULL;
 	}
 	
-	// Allocate stack space for new row in CSV
-	char row[MAX_ROW_LENGTH];
-	
 	// Generate strings of each field
 	char* time_string = ctime( &(msg->timestamp) );
-	
+	time_string[strlen(time_string) - 1] = '\0'; // Replace newline
+
 	char id_string[32];
 	sprintf(id_string, "%d", msg->id);
 
@@ -240,7 +313,7 @@ Message* retrieve_msg(int id)
 	char* line = NULL;
 	size_t len = 0;
 	ssize_t read;
-	int current_line = 1; // Skip header
+	int current_line = 0; // Skip header
 	
 	// Scan from line to line (ID = Line number)
 	while ((read = getline(&line, &len, file)) != -1)
@@ -248,8 +321,7 @@ Message* retrieve_msg(int id)
 		if (current_line == id)
 		{
 			strcpy(result, line);
-			fclose(file);
-			free(line);
+			break;
 		}
 		current_line++;
 	}
@@ -259,7 +331,7 @@ Message* retrieve_msg(int id)
 	fclose(file);
 
 	// ID out of bounds or other indexing error
-	if (result == NULL)
+	if (result[0] == '\0')
 	{
 		fprintf(stderr, "ID not found in messages.csv by message.retrieve_msg for message %d\n", id);
 		return NULL;
@@ -297,7 +369,7 @@ int update_delivered(int id)
 
 	char line[MAX_ROW_LENGTH];
 	long pos = 0; // Relative position of the flag within the file
-	int current_id = 1; 
+	int current_id = 0; 
 
 	while (fgets(line, sizeof(line), file))
 	{
@@ -337,6 +409,7 @@ int update_delivered(int id)
 
 	fprintf(stderr, "ID %d not found in messages.csv, updated_delivered.message\n", id);
 	fclose(file);
+	return -1;
 }
 
 // Function:	get_id
@@ -356,7 +429,7 @@ int get_id(void)
 
 	char line[MAX_ROW_LENGTH];
 	int id = 0;
-	while (fgets (line, MAX_LINE_LENGTH, file))
+	while (fgets (line, MAX_ROW_LENGTH, file))
 	{
 		id++;
 	}
@@ -369,7 +442,7 @@ int get_id(void)
 // Prints the contents of a message object 
 //
 // msg:		Message* object pointer
-void print_msg(Message* msg)
+void print_msg(const Message* msg)
 {
 	if (msg == NULL)
 	{
