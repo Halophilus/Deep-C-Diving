@@ -19,7 +19,7 @@
 // content:	String of message content
 //
 // returns: Message object from heap memory
-Message* create_msg(const char* sender, const char* receiver const char* content)
+Message* create_msg(const char* sender, const char* receiver, const char* content)
 {
 	Message* msg = ( Message* ) malloc (sizeof ( Message ));
 	if (msg == NULL)
@@ -111,9 +111,9 @@ Message* parse_row(char* row)
 	new_msg->timestamp = time_value;
 
 	// Copy string fields	
-	strncpy( new_msg->sender, fields[2], sizeof(msg->sender) - 1 );
-	strncpy( new_msg->receiver, fields[3], sizeof(msg->receiver) - 1 );
-	strncpy( new_msg->content, fields[4], sizeof(msg->content) - 1 );
+	strncpy( new_msg->sender, fields[2], sizeof(new_msg->sender) - 1 );
+	strncpy( new_msg->receiver, fields[3], sizeof(new_msg->receiver) - 1 );
+	strncpy( new_msg->content, fields[4], sizeof(new_msg->content) - 1 );
 
 	// Cap string values
 	new_msg->sender[ sizeof(new_msg->sender) - 1 ] = '\0';
@@ -123,7 +123,7 @@ Message* parse_row(char* row)
 	// Received flag
 	new_msg->delivered = atoi(fields[5]);
 	
-	return new_msg;
+	return new_msg
 }
 
 // Function:	store_message
@@ -181,11 +181,11 @@ char* generate_msg_string(Message* msg)
 	if (msg == NULL)
 	{
 		fprintf(stderr, "Null Message pointer passed to message.generate_msg_string");
-		return -1;
+		return NULL;
 	}
 	
 	// Allocate stack space for new row in CSV
-	char* row[MAX_ROW_LENGTH];
+	char row[MAX_ROW_LENGTH];
 	
 	// Generate strings of each field
 	char* time_string = ctime( &(msg->timestamp) );
@@ -197,13 +197,13 @@ char* generate_msg_string(Message* msg)
 	sprintf(delivered_string, "%d", msg->delivered);
 
 	char* sender[ sizeof(msg->sender) ];
-	sender = msg->sender;
+	strcpy(sender, msg->sender);
 
 	char* receiver[ sizeof(msg->receiver) ];
-	receiver = msg->receiver;
+	strcpy(receiver, msg->receiver);
 
 	char* content[ sizeof(msg->content) ];
-	content = msg->content;
+	strcpy(content, msg->content);
 
 	// Allocate memory for new string and concatenate
 	char* csv_string = ( char* )malloc( MAX_ROW_LENGTH * sizeof(char) + 1 );
@@ -242,7 +242,7 @@ Message* retrieve_msg(int id)
 	{
 		if (current_line == id)
 		{
-			result = strdup(line);
+			strcpy(result, line);
 			fclose(file);
 			free(line);
 		}
@@ -291,7 +291,7 @@ int update_delivered(int id)
 	}
 
 	char line[MAX_ROW_LENGTH];
-	long pos; // Relative position of the flag within the file
+	long pos = 0; // Relative position of the flag within the file
 	int current_id = 1; 
 
 	while (fgets(line, sizeof(line), file))
@@ -301,6 +301,7 @@ int update_delivered(int id)
 			// Locate last field in the entry
 			char* last_comma = strrchr(line, ',');
 			
+			// Error in CSV formatting	
 			if (last_comma == NULL)
 			{
 				fprintf(stderr, "ID %d not found in messages.csv by update_delivered.message\n", id);
@@ -308,6 +309,7 @@ int update_delivered(int id)
 				return -1;
 			}
 
+			// Do nothing if the flag is already raised
 			if (*(last_comma + 1) != '0')
 			{
 				fprintf(stderr, "ID %d already marked delivered, updated_delivered.message\n", id);
@@ -315,7 +317,7 @@ int update_delivered(int id)
 				return -1;
 			}
 
-			// Calculate the relative position in the file
+			// Calculate the absolute position in the file
 			pos = ftell(file) - (strlen(line) - (last_comma - line + 1));
 
 			// Seek to position
@@ -355,4 +357,44 @@ int get_id(void)
 	}
 
 	return id;
+}
+
+// Function:	print_msg
+// ----------------------
+// Prints the contents of a message object 
+//
+// msg:		Message* object pointer
+void print_msg(Message* msg)
+{
+	if (msg == NULL)
+	{
+		fprintf(stderr, "Null Message pointer passed to message.print_msg\n");
+		return;
+	}
+
+	// Generate CSV string representation
+	cha* csv_string = generate_msg_string(msg);
+	if (csv_string == NULL)
+	{
+		fprintf(stderr, "Failed to generate CSV string in message.print_msg\n");
+		return;
+	}
+
+	// Tokenize and print each field
+	char* token;
+	char csv_copy[MAX_ROW_LENGTH];
+	strcpy(csv_copy, csv_string);
+
+	const char* labels = {"ID", "Timestamp", "Sender", "Receiver", "Content", "Delivered" };
+	int i = 0;
+
+	token = strtok(csv_copy, ",");
+	while (token != NULL && i < 6)
+	{
+		printf("%s: %s\n", labels[i], token);
+		token = strtok(NULL, ",");
+		i++;
+	}
+
+	free(csv_string);
 }
