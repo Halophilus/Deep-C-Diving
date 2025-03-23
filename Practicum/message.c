@@ -123,7 +123,7 @@ Message* parse_row(char* row)
 	// Received flag
 	new_msg->delivered = atoi(fields[5]);
 	
-	return new_msg
+	return new_msg;
 }
 
 // Function:	store_message
@@ -196,13 +196,13 @@ char* generate_msg_string(Message* msg)
 	char delivered_string[2];
 	sprintf(delivered_string, "%d", msg->delivered);
 
-	char* sender[ sizeof(msg->sender) ];
+	char sender[ sizeof(msg->sender) ];
 	strcpy(sender, msg->sender);
 
-	char* receiver[ sizeof(msg->receiver) ];
+	char receiver[ sizeof(msg->receiver) ];
 	strcpy(receiver, msg->receiver);
 
-	char* content[ sizeof(msg->content) ];
+	char content[ sizeof(msg->content) ];
 	strcpy(content, msg->content);
 
 	// Allocate memory for new string and concatenate
@@ -373,7 +373,7 @@ void print_msg(Message* msg)
 	}
 
 	// Generate CSV string representation
-	cha* csv_string = generate_msg_string(msg);
+	char* csv_string = generate_msg_string(msg);
 	if (csv_string == NULL)
 	{
 		fprintf(stderr, "Failed to generate CSV string in message.print_msg\n");
@@ -385,7 +385,7 @@ void print_msg(Message* msg)
 	char csv_copy[MAX_ROW_LENGTH];
 	strcpy(csv_copy, csv_string);
 
-	const char* labels = {"ID", "Timestamp", "Sender", "Receiver", "Content", "Delivered" };
+	const char* labels[] = {"ID", "Timestamp", "Sender", "Receiver", "Content", "Delivered" };
 	int i = 0;
 
 	token = strtok(csv_copy, ",");
