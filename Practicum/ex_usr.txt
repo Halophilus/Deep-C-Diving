@@ -48,9 +48,3 @@ Sender BU
 Sender BV
 Sender BW
 Sender BX
-Sender BY
-Sender BZ
-Sender CA
-Sender CB
-Sender CC
-Sender CD

@@ -11,6 +11,8 @@
 #define MESSAGE_H
 #define CACHE_SIZE 16
 
+#define USER_SIZE 32
+#define CONTENT_SIZE 256
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,9 +24,9 @@ typedef struct Message
 {
 	int id;
 	time_t timestamp;
-	char sender[256];
-	char receiver[256];
-	char content[1024];
+	char sender[USER_SIZE];
+	char receiver[USER_SIZE];
+	char content[CONTENT_SIZE];
 	int delivered; // 0 (undelivered) or 1 (delivered)
 	
 	// Linked list 
@@ -55,7 +57,7 @@ void make_cache();
 Message* cache_fetch(int id);
 int cache_push(Message* msg);
 void cache_bump(Message* msg);
-
+void print_cache(void);
 
 Cache msg_cache;
 extern int accesses;
