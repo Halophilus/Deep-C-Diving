@@ -52,6 +52,9 @@ Message* create_msg(const char* sender, const char* receiver, const char* conten
 	// Default flag
 	msg->delivered = 0;
 
+	// Cache behavior
+	msg->next = NULL;
+
 	return msg;
 }
 
