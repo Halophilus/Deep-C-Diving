@@ -7,15 +7,14 @@
  * Implementation of data structure to store a message
  */
 #include "message.h"
-	
-#include <time.h> 
+
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define MAX_ROW_LENGTH sizeof(Message) + 256 // Include space for commas in CSV and time_t string
-#define MAX_FIELD_LENGTH 1028
-#define MAX_DATE_LENGTH 128
+
 
 // Function:	create_msg
 // -----------------------
@@ -28,15 +27,33 @@
 // returns: Message object from heap memory
 Message* create_msg(const char* sender, const char* receiver, const char* content)
 {
+    // Allocate memory
 	Message* msg = ( Message* ) malloc (sizeof ( Message ));
 	if (msg == NULL)
 	{
-		fprintf(stderr, "Error allocating memory in message.create_msg\n");
+		fprintf(stderr, "Message.create_msg: Error allocating memory for new message\n");
 		return NULL;
 	}
 
 	// System values
-	msg->id = get_id();
+    // Generate ID and validate
+    int id = get_id();
+    if (id < 0)
+    {
+        fprintf(stderr, "Message.create_msg: can't obtain valid ID.\n");
+        free(msg);
+        return NULL;
+    }
+	msg->id = id;
+
+    // Generate timestamp and validate
+    time_t timestamp = time(NULL);
+    if (!timestamp)
+    {
+        fprintf(stderr, "Message.create_msg: failed to obtain time_t\n");
+        free(msg);
+        return NULL;
+    }
 	msg->timestamp = time(NULL);
 
 	// Copy user-defined values
@@ -44,7 +61,7 @@ Message* create_msg(const char* sender, const char* receiver, const char* conten
 	strncpy( msg->receiver, receiver, sizeof(msg->receiver) - 1 );
 	strncpy( msg->content, content, sizeof(msg->content) - 1 );
 
-	// Cap string values
+	// Cap string values in case of overflow
 	msg->sender[ sizeof(msg->sender) - 1 ] = '\0';
 	msg->receiver[ sizeof(msg->receiver) - 1 ] = '\0';
 	msg->content[ sizeof(msg->content) - 1 ] = '\0';
@@ -52,8 +69,24 @@ Message* create_msg(const char* sender, const char* receiver, const char* conten
 	// Default flag
 	msg->delivered = 0;
 
+    // Storage behavior
+    int stored = store_msg(msg);
+    if (stored < 0)
+    {
+        fprintf(stderr, "Message.create_msg: Error storing message %d to disk\n", msg->id);
+        free(msg);
+        return NULL;
+    }
+
 	// Cache behavior
 	msg->next = NULL;
+    int pushed = cache_push(msg);
+    if (pushed < 0)
+    {
+        fprintf(stderr, "Message.create_msg: Message %d push to cache failed.\n", msg->id);
+        free(msg);
+        return NULL;
+    }
 
 	return msg;
 }
@@ -66,21 +99,24 @@ Message* create_msg(const char* sender, const char* receiver, const char* conten
 //
 // returns: 	integer month value
 int month_to_number(const char* month) {
+    // Array of possible month strings
     const char* months[] = {
         "Jan", "Feb", "Mar", "Apr", "May", "Jun",
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     };
 
+    // Find index of string
     for (int i = 0; i < 12; i++) {
         if (strncmp(month, months[i], 3) == 0) {
             return i;
         }
     }
 
+    fprintf(stderr, "Message.month_to_number: Malformed month entry in time string: %s", month);
     return -1; // Invalid month
 }
 
-// Function:	strptime
+// Function:	c_strptime
 // ---------------------
 // Helper function with custom implementation of strptime from time.h
 // 
@@ -89,7 +125,7 @@ int month_to_number(const char* month) {
 // tm_out:	struct tm object for storing new time
 //
 // returns:	0 on success, -1 on failure 
-int strptime(const char* date_str, const char* format, struct tm* tm_out) {
+int c_strptime(const char* date_str, const char* format, struct tm* tm_out) {
     if (date_str == NULL || format == NULL || tm_out == NULL) {
         return -1; // Invalid input
     }
@@ -99,6 +135,7 @@ int strptime(const char* date_str, const char* format, struct tm* tm_out) {
 
     // Format is: "%a %b %d %H:%M:%S %Y"
     if (sscanf(date_str, "%3s %3s %2s %2s:%2s:%2s %4s", day_name, month_name, day_str, hour_str, minute_str, second_str, year_str) != 7) {
+        fprintf(stderr, "Message.c_strptime: malformed timestamp string: %s", date_str);
         return -1; // Error in parsing
     }
 
@@ -108,6 +145,7 @@ int strptime(const char* date_str, const char* format, struct tm* tm_out) {
     // Convert month name to month number
     month = month_to_number(month_name);
     if (month == -1) {
+        fprintf(stderr, "Message.c_strptime: Error converting month substring to index: %s", month_name);
         return -1; // Invalid month
     }
 
@@ -127,7 +165,7 @@ int strptime(const char* date_str, const char* format, struct tm* tm_out) {
     tm_out->tm_sec = second;
     tm_out->tm_year = year - 1900; // tm_year is years since 1900
 
-    return 0; // Success
+    return 0;
 }
 
 
@@ -140,21 +178,25 @@ int strptime(const char* date_str, const char* format, struct tm* tm_out) {
 // returns:	Message* object pointer
 Message* parse_row(char* row)
 {
+    // Null string
 	if (row == NULL)
 	{
-		fprintf(stderr, "Null char pointer passed to message.parse_row: %s\n", row);
+		fprintf(stderr, "Message.parse_row: Null argument exception\n");
 		return NULL;
 	}
-	
-	Message* new_msg = (Message*)malloc( sizeof(Message) );
 
+    Message *new_msg;
+    new_msg = (Message *) malloc(sizeof(Message));
+
+    // Allocation error
 	if (new_msg == NULL)
 	{
-		fprintf(stderr, "Error allocating memory for new Message object in message.new_msg: %s\n", row);
+		fprintf(stderr, "Message.parse_row: Error allocating memory for new Message object: %s\n", row);
 		return NULL;
 	}
 
-	char* fields[6]; // 6 Attributes per message
+    // 6 defined attributes not related to cache
+	char* fields[6];
 	char* token;
 	int field_count = 0;
 
@@ -170,27 +212,29 @@ Message* parse_row(char* row)
 		field_count++;
 		token = strtok(NULL, ",");
 	}
-	
+
+    // Convert id string to int
 	new_msg->id = atoi(fields[0]);
 
 	// Parse and store the timestamp
 	struct tm tm;
-
-	if (strptime(fields[1], "%a %b %d %H:%M:%S %Y", &tm) == -1)
+	if (c_strptime(fields[1], "%a %b %d %H:%M:%S %Y", &tm) == -1)
 	{
-		fprintf(stderr, "Error parsing string into tm object in message.parse_row: %s\n", row);
+		fprintf(stderr, "Message.parse_row: Error parsing string into tm object: %s\n", row);
 		free(new_msg);
 		return NULL;
 	}
-	
+
+    // Convert tm to time_t
 	time_t time_value = mktime(&tm);
 	if (time_value == -1)
 	{
-		fprintf(stderr, "Failed to convert tm to time_t in message.parse_row: %s\n", row);
+		fprintf(stderr, "Message.parse_row: Failed to convert tm to time_t: %s\n", row);
 		free(new_msg);
 		return NULL;
 	}
 
+    // Assign time_t
 	new_msg->timestamp = time_value;
 
 	// Copy string fields	
@@ -198,7 +242,7 @@ Message* parse_row(char* row)
 	strncpy( new_msg->receiver, fields[3], sizeof(new_msg->receiver) - 1 );
 	strncpy( new_msg->content, fields[4], sizeof(new_msg->content) - 1 );
 
-	// Cap string values
+	// Cap string values in case of overflow
 	new_msg->sender[ sizeof(new_msg->sender) - 1 ] = '\0';
 	new_msg->receiver[ sizeof(new_msg->receiver) - 1 ] = '\0';
 	new_msg->content[ sizeof(new_msg->content) - 1 ] = '\0';
@@ -218,36 +262,44 @@ Message* parse_row(char* row)
 // returns: 0 on success, -1 on failure
 int store_msg(const Message* msg)
 {
+    // Null message
 	if (msg == NULL)
 	{
-		fprintf(stderr, "Null Message pointer passed to message.store_msg\n");
+		fprintf(stderr, "Message.store_msg: Null pointer argument exception\n");
 		return -1;
 	}
 
 	FILE* file;
 	file = fopen("messages.csv", "a");
 
+    // File opening error
 	if (file == NULL)
 	{
-		fprintf(stderr, "Error opening messages.csv in message.store_msg for message %d\n", msg->id);
+		fprintf(stderr, "Message.store_msg: Error opening messages.csv for message %d\n", msg->id);
 		return -1;
 	}
-	
+
+    // Generate a new entry
 	char* csv_entry = generate_msg_string(msg);
 
+    // Row generation failure
 	if (csv_entry == NULL)
 	{
-		fprintf(stderr, "Failure to generate CSV entry in message.store_msg for message %d\n", msg->id);
-		return -1;
+		fprintf(stderr, "Message.store_msg: Failure to generate CSV entry for message %d\n", msg->id);
+		fclose(file);
+        return -1;
 	}
-	
+
+    // Write failure
 	if (fputs(csv_entry, file) == EOF )
 	{
-		fprintf(stderr, "Failure to write CSV entry to file in message.store_msg for message %d\n", msg->id); 
+		fprintf(stderr, "Message.store_msg: Failure to write CSV entry to file for message %d\n", msg->id);
 		fclose(file);
 		return -1;
 	}
-	
+
+    fflush(file); // Ensure
+    // Close resources
 	fclose(file);
 	return 0;
 }
@@ -263,7 +315,7 @@ char* generate_msg_string(const Message* msg)
 {
 	if (msg == NULL)
 	{
-		fprintf(stderr, "Null Message pointer passed to message.generate_msg_string");
+		fprintf(stderr, "Message.generate_msg_string: Null Message pointer argument\n");
 		return NULL;
 	}
 	
@@ -271,24 +323,35 @@ char* generate_msg_string(const Message* msg)
 	char* time_string = ctime( &(msg->timestamp) );
 	time_string[strlen(time_string) - 1] = '\0'; // Replace newline
 
+    // ID
 	char id_string[32];
 	sprintf(id_string, "%d", msg->id);
 
+    // Delivered
 	char delivered_string[2];
 	sprintf(delivered_string, "%d", msg->delivered);
 
+    // Sender
 	char sender[ sizeof(msg->sender) ];
 	strcpy(sender, msg->sender);
 
+    // Receiver
 	char receiver[ sizeof(msg->receiver) ];
 	strcpy(receiver, msg->receiver);
 
+    // Content
 	char content[ sizeof(msg->content) ];
 	strcpy(content, msg->content);
 
 	// Allocate memory for new string and concatenate
 	char* csv_string = ( char* )malloc( MAX_ROW_LENGTH * sizeof(char) + 1 );
-	sprintf(csv_string, "%s,%s,%s,%s,%s,%s\n", 
+	if (csv_string == NULL)
+    {
+        fprintf(stderr, "Message.generate_msg_string: Memory allocation error for new string\n");
+        return NULL;
+    }
+
+    sprintf(csv_string, "%s,%s,%s,%s,%s,%s\n",
 			id_string, time_string, sender, receiver, content, delivered_string);
 
 	return csv_string;
@@ -303,51 +366,56 @@ char* generate_msg_string(const Message* msg)
 // returns:	Message* object pointer to associated message
 Message* retrieve_msg(int id)
 {
+    // Search cache first
+    Message* new_msg = cache_fetch(id);
+    if (new_msg) return new_msg;
+
+    // Open file
 	FILE* file;
 	file = fopen("messages.csv", "r");
 
+    // Opening error
 	if (file == NULL)
 	{
-		fprintf(stderr, "Error opening messages.csv in message.retrieve_msg for message %d\n", id);
+		fprintf(stderr, "Message.retrieve_msg: Error opening messages.csv for message %d\n", id);
 		return NULL;
 	}
 	
 	char result[MAX_ROW_LENGTH];	
-	char* line = NULL;
-	size_t len = 0;
-	ssize_t read;
-	int current_line = 0; // Skip header
+	int current_line = 0;
 	
 	// Scan from line to line (ID = Line number)
-	while ((read = getline(&line, &len, file)) != -1)
+	while (fgets(result, MAX_ROW_LENGTH, file))
 	{
-		if (current_line == id)
-		{
-			strcpy(result, line);
-			break;
-		}
+		if (current_line == id) break;
 		current_line++;
 	}
 
 	// Close resources
-	free(line);
 	fclose(file);
 
 	// ID out of bounds or other indexing error
 	if (result[0] == '\0')
 	{
-		fprintf(stderr, "ID not found in messages.csv by message.retrieve_msg for message %d\n", id);
+		fprintf(stderr, "Message.retrieve_msg: ID not found in messages.csv for message %d\n", id);
 		return NULL;
 	}
-		
-	Message* new_msg = parse_row(result);
-	
-	// Error parsing row
+
+    // Generate a new message from the row
+	new_msg = parse_row(result);
 	if (new_msg == NULL)
 	{
-		fprintf(stderr, "Error parsing row data in message.retrieve_msg for message %d\n", id);
+		fprintf(stderr, "Message.retrieve_msg: Error parsing row data in for message %d\n", id);
 		return NULL;	
 	}
+
+    // Push to cache
+    int pushed = cache_push(new_msg);
+    if (pushed < 0)
+    {
+        fprintf(stderr, "Message.retrieve_msg: Error pushing to cache for message %d\n", id);
+        return NULL;
+    }
 
 	return new_msg;
 }
@@ -361,12 +429,12 @@ Message* retrieve_msg(int id)
 // returns: 	0 if success, -1 if failed
 int update_delivered(int id)
 {
+    // Open disk storage
 	FILE* file;
 	file = fopen("messages.csv", "r+");
-
 	if (file == NULL)
 	{
-		fprintf(stderr, "Error opening messages.csv in update_delivered.message for message %d\n", id);
+		fprintf(stderr, "Message.update_delivered: Error opening messages.csv in for message %d\n", id);
 		return -1;
 	}
 
@@ -374,17 +442,19 @@ int update_delivered(int id)
 	long pos = 0; // Relative position of the flag within the file
 	int current_id = 0; 
 
+    // Scan through each line
 	while (fgets(line, sizeof(line), file))
 	{
+        // Found match
 		if (current_id == id)
 		{
 			// Locate last field in the entry
 			char* last_comma = strrchr(line, ',');
 			
-			// Error in CSV formatting	
+			// CSV formatting error
 			if (last_comma == NULL)
 			{
-				fprintf(stderr, "ID %d not found in messages.csv by update_delivered.message\n", id);
+				fprintf(stderr, "Message.update_delivered: ID %d not found in messages.csv\n", id);
 				fclose(file);
 				return -1;
 			}
@@ -392,7 +462,7 @@ int update_delivered(int id)
 			// Do nothing if the flag is already raised
 			if (*(last_comma + 1) != '0')
 			{
-				fprintf(stderr, "ID %d already marked delivered, updated_delivered.message\n", id);
+				fprintf(stderr, "Message.update_delivered: ID %d already marked delivered\n", id);
 				fclose(file);
 				return -1;
 			}
@@ -402,15 +472,32 @@ int update_delivered(int id)
 
 			// Seek to position
 			fseek(file, pos, SEEK_SET);
-			fputc('1', file);
+
+            // Update char at location
+            fputc('1', file);
 
 			fclose(file);
+
+            // Update message in cache
+            Message* msg = cache_fetch(id);
+
+            if (!msg)
+            {
+                msg = retrieve_msg(id);
+                if (!msg)
+                {
+                    fprintf(stderr, "Message.update_delivered: message not found in messages.csv, cache update failed", id);
+                    return -1;
+                }
+                msg->delivered = 1;
+            }
 			return 0;
 		}
+
 		current_id++;
 	}
 
-	fprintf(stderr, "ID %d not found in messages.csv, updated_delivered.message\n", id);
+	fprintf(stderr, "Message.update_delivered: ID %d not found in messages.csv\n", id);
 	fclose(file);
 	return -1;
 }
@@ -422,16 +509,18 @@ int update_delivered(int id)
 // returns:	Integer value corresponding with most recent Message.id used
 int get_id(void)
 {
+    // Open messages.csv
 	FILE* file = fopen("messages.csv", "r");
-
 	if (file == NULL)
 	{
-		fprintf(stderr, "Error opening messages.csv in message.get_id\n");
-		exit(1); // Fatal error, end program to avoid disrupting stored data
+		fprintf(stderr, "Message.get_id: Error opening messages.csv\n");
+		return -1;
 	}
 
 	char line[MAX_ROW_LENGTH];
 	int id = 0;
+
+    // Scan through messages until line number = id
 	while (fgets (line, MAX_ROW_LENGTH, file))
 	{
 		id++;
@@ -449,7 +538,7 @@ void print_msg(const Message* msg)
 {
 	if (msg == NULL)
 	{
-		fprintf(stderr, "Null Message pointer passed to message.print_msg\n");
+		fprintf(stderr, "Message.print_msg: Null pointer argument exception\n");
 		return;
 	}
 
@@ -457,7 +546,7 @@ void print_msg(const Message* msg)
 	char* csv_string = generate_msg_string(msg);
 	if (csv_string == NULL)
 	{
-		fprintf(stderr, "Failed to generate CSV string in message.print_msg\n");
+		fprintf(stderr, "Message.print_msg: Failed to generate CSV string\n");
 		return;
 	}
 

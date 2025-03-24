@@ -18,7 +18,7 @@
 #include <time.h>
 
 // Message structure definition
-typedef struct 
+typedef struct Message
 {
 	int id;
 	time_t timestamp;
@@ -28,13 +28,12 @@ typedef struct
 	int delivered; // 0 (undelivered) or 1 (delivered)
 	
 	// Linked list 
-	struct Message* next;
+    struct Message *next;
 } Message;
 
 // Cache structure definition
 typedef struct Cache 
 {
-	Message* messages[CACHE_SIZE];
 	Message* head;
 	Message* tail;
 	int size;
@@ -54,11 +53,14 @@ void print_msg(const Message* msg);
 // Function prototypes for Cache behavior
 void make_cache();
 Message* cache_fetch(int id);
-void cache_push(int id);
-void cache_evict();
-void cache_bump(int id);
+int cache_push(Message* msg);
+void cache_bump(Message* msg);
 
 
 Cache msg_cache;
+extern int accesses;
+extern int hits;
+extern int misses;
+
 #endif // MESSAGE_H
 
