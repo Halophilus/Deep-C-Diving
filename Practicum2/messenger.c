@@ -7,6 +7,7 @@
  * Source file for symmetric TCP operations
  */
 
+
 #include "messenger.h"
 
 // Function:	send_file
@@ -34,13 +35,14 @@ int send_file(char *filename, int socket_desc)
 
 	// Get and send file size
 	fseek(fp, 0, SEEK_END);
-	long file_size = ftell(fp);
-	rewind(file);
+	uint32_t file_size = (uint32_t) ftell(fp);
+	rewind(fp);
 
+    file_size = htonl(file_size);
 	if (send(socket_desc, &file_size, sizeof(file_size), 0) == -1)
 	{
 		fprintf(stderr, "send_file: error sending file size to socket %d\n", socket_desc);
-		fclose(file);
+		fclose(fp);
 		return 1;
 	}
 
@@ -50,6 +52,7 @@ int send_file(char *filename, int socket_desc)
 	struct winsize w;
 	ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
 	int window_width = w.ws_col;
+    int previous_progress = 0;
 	double column_transfer_size = (double)file_size / (double)window_width;
 	
 	// Buffered iteration through the file
@@ -64,7 +67,7 @@ int send_file(char *filename, int socket_desc)
 			if (result == -1) // If sending failed
 			{
 				fprintf(stderr, "\nsend_file: Error sending data from file %s to socket %d\n", filename, socket_desc);
-				fclose(fp)
+				fclose(fp);
 				return 1;
 			}
 
@@ -83,6 +86,10 @@ int send_file(char *filename, int socket_desc)
 			
 		}
 	}
+
+    // Add newline after progress bar terminates
+    fprintf(stdout, "\n");
+
 #ifdef DEBUG
 	fprintf(stdout, "DEBUG: client.send_file: file %s successfully sent to socket %d\n", filename, socket_desc);
 #endif
@@ -100,7 +107,6 @@ int send_file(char *filename, int socket_desc)
 // returns: 0 on success, -1 on 
 int receive_file(char *filename, int socket_desc)
 {
-
 
 #ifdef DEBUG
 	fprintf(stdout, "receive_file: attempting retrieval of %s from socket %d\n", filename, socket_desc);
@@ -141,27 +147,20 @@ int receive_file(char *filename, int socket_desc)
 	// Test if the file exists
 	char filename_buffer[BUFFER_SIZE];
 	strcpy(filename_buffer, filename);
-	FILE* fp = fopen(filename_buffer, "r");
 	int version = 0;
 
 	// Iterate through version numbers until an unused filename is discovered
-	while (fp != NULL)
-	{
-#ifdef DEBUG
-		fprintf(stdout, "DEBUG receive_file: %s already exists\n", filename_buffer);
-#endif
-		snprintf(filename_buffer, BUFFER_SIZE, "%s%d", filename, version);
-		fp = fopen(filename_buffer, "r");
-		version++;
-	}
+    snprintf(filename_buffer, BUFFER_SIZE, "%s", filename);
+    while (access(filename_buffer, F_OK) == 0) {
+        snprintf(filename_buffer, BUFFER_SIZE, "%s%d", filename, version++);
+    }
 
 #ifdef DEBUG
 	fprintf(stdout, "DEBUG receive_file: proceeding to download to %s at socket %d\n", filename_buffer, socket_desc);
 #endif
 
-	// Close out original file pointer and open a new one with write privileges
-	fclose(fp);
-	fp = fopen(filename_buffer, "wb");
+    // Open file
+	FILE* fp = fopen(filename_buffer, "wb");
 	if (!fp)
 	{
 		fprintf(stderr, "receive_file: error opening file %s\n", filename);
@@ -170,12 +169,13 @@ int receive_file(char *filename, int socket_desc)
 
 	// Receive file_size
 	int file_size;
-	if (recv(socket_desc, &file_size, BUFFER_SIZE, 0) == -1)
+	if (recv(socket_desc, &file_size, sizeof(file_size), 0) == -1)
 	{
 		fprintf(stderr, "receive_file: error receiving file size of %s\n", filename);
 		fclose(fp);
 		return 1;
 	}
+    file_size = ntohl(file_size);
 
 #ifdef DEBUG
 	fprintf(stdout, "DEBUG receive_file: file size of %d", file_size);
@@ -240,12 +240,15 @@ int send_msg(char *msg, int socket_desc)
 // socket_desc: file descriptor for origin socket
 //
 // returns 0 on success, -1 on failure
-int receive_msg(int socket_desc)
+char* receive_msg(int socket_desc)
 {
 	char *msg = (char *)malloc(BUFFER_SIZE);
 	
 	if (recv(socket_desc, msg, BUFFER_SIZE, 0) < 0)
-		return NULL;
+    {
+        free(msg);
+        return NULL;
+    }
 	else
 		return msg;
 }

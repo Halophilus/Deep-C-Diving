@@ -15,6 +15,8 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
+#include <malloc.h>
 
 #define BUFFER_SIZE 1028
 #define DEBUG
@@ -57,6 +59,6 @@ int send_msg(char *msg, int socket_desc);
 // socket_desc: file descriptor for origin socket
 //
 // returns 0 on success, -1 on failure
-int receive_msg(int socket_desc);
+char* receive_msg(int socket_desc);
 
 #endif

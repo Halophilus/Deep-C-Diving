@@ -5,12 +5,73 @@
  *   https://www.educative.io/answers/how-to-implement-tcp-sockets-in-c
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <unistd.h>
+#include "messenger.h"
 
+// Function:    handle_inbound
+// ---------------------------
+// Handles commands from a client
+int handle_inbound(int socket_desc)
+{
+    // Receive command
+    char *cmd = receive_msg(socket_desc);
+    if(!cmd)
+    {
+        fprintf(stderr, "server.handle_inbound: error receiving command from client\n");
+        return -1;
+    }
+
+    // Parse command
+    if (!strcmp(cmd, "WRITE") && !strcmp(cmd, "GET") && !strcmp(cmd, "RM"))
+    {
+        // Initiate handshake
+        if(!send_msg("GO", socket_desc))
+        {
+            fprintf(stderr, "server.handle_inbound: handshake initiation aborted\n", cmd);
+            free(cmd);
+            return -1;
+        }
+    }
+    if (strcmp(response, "GO") == 0) // Approval is given
+    {
+        // Free original response
+        free(response);
+        response = NULL;
+
+        // Send target filename
+        if(!send_msg(target, socket_desc))
+        {
+            fprintf(stderr, "client.handle_outbound: error sending target %s to server\n", target);
+            return -1;
+        }
+
+        // Get approval from server
+        response = receive_msg(socket_desc);
+        if(!response)
+        {
+            fprintf(stderr, "client.handle_outbound: error getting server response about target %s\n", target);
+            return -1;
+        }
+
+        // If the signal is given to proceed
+        if (strcmp(response, "CONTINUE") == 0)
+        {
+            free(response);
+            return 0;
+        }
+        else
+        {
+            fprintf(stderr, "client.handle_outbound: session aborted by server before file could be sent\n");
+            free(response);
+            return -1;
+        }
+    }
+    else
+    {
+        fprintf(stderr, "client.handle_outbound: session aborted by server before filename could be processed\n");
+        free(response);
+        return -1;
+    }
+}
 int main(void)
 {
   int socket_desc, client_sock;

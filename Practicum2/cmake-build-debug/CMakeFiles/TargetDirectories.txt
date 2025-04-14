@@ -1,0 +1,3 @@
+/mnt/c/Users/Ben Henshaw/Documents/Spring 2025 CS5004 TA/Lab 02 - color and unit tests/CS5600/Practicum2/cmake-build-debug/CMakeFiles/Practicum2.dir
+/mnt/c/Users/Ben Henshaw/Documents/Spring 2025 CS5004 TA/Lab 02 - color and unit tests/CS5600/Practicum2/cmake-build-debug/CMakeFiles/edit_cache.dir
+/mnt/c/Users/Ben Henshaw/Documents/Spring 2025 CS5004 TA/Lab 02 - color and unit tests/CS5600/Practicum2/cmake-build-debug/CMakeFiles/rebuild_cache.dir
