@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 	{
 		// Notify the server
 		char *msg = "WRITE";
-		if(send(socket_desc, msg, strlen(msg), 0) < 0)
+		if(!send_msg(msg, socket_desc))
 		{
 			fprintf(stderr, "client: unable to reach server for WRITE request\n");
 			close(socket_desc);
@@ -66,28 +66,72 @@ int main(int argc, char *argv[])
 		}
 		
 		// Wait until server is ready
-		if(recv(socket_desc, server_message, sizeof(server_message), 0 < 0))
+		char *response = receive_msg(socket_desc);
+		if(!response)
 		{
 			fprintf(stderr, "client: error receiving server's response for WRITE request\n");
 			close(socket_desc);
 			return -1;
 		}
 
-		if (strcmp(server_message, "GO") == 0)
+		if (strcmp(response, "GO") == 0)
 		{
-			// Clear buffers
-			memset(server_message,'\0',sizeof(server_message));
-			memset(client_message,'\0',sizeof(client_message));
-			
+			// Free original response
+			free(response);
+			response = NULL;
+
 			// Send destination filename
-			if(send(socket_desc, argv[3], BUFFER_SIZE, 0) < 0)
+			if(!send_msg(argv[3], socket_desc))
 			{
 				fprintf(stderr, "client: error sending destination filename to server\n");
 				close(socket_desc);
 				return -1;
 			}
+			
+			response = receive_msg(socket_desc);
+			if(!response)
+			{
+				fprintf(stderr, "client: error getting server response about destination filename\n");
+				free(response);
+				close(socket_desc);
+				return -1;
+			}
+			
+			if (strcmp(response, "CONTINUE") == 0)
+			{
+				free(response);
+				response = NULL;
 
-			if(recv(socket_desc
+				// Attempt to send the file
+				int sent = send_file(argv[2],socket_desc);
+				switch (sent)
+				{
+					case 0:
+						break;
+					case 1:
+						fprintf(stderr, "client: lost connection mid-stream\n");
+						close(socket_desc);
+						return -1;
+						break;
+					case -1:
+						fprintf(stderr, "client: error opening file\n");
+						close(socket_desc);
+						return -1;
+						break;
+				}
+
+				// Wait for server response
+				response = receive_msg(socket_desc);
+
+				if(!response)
+				{
+					fprintf(stderr, "client: error getting server response after file transfer attempt\n");
+					close(socket_desc);
+					free(response);
+				}
+
+				if 
+			}
 			send_file(argv[2], socket_desc);
 	
 	}
