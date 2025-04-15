@@ -178,23 +178,25 @@ int main(int argc, char *argv[])
                         break;
                     case 1:
                         fprintf(stderr, "client: lost connection during GET\n");
+                        send_msg("File download failed", socket_desc);
                         close(socket_desc);
                         return -1;
                         break;
                     case -1:
                         fprintf(stderr, "client: error saving file during GET\n");
+                        send_msg("File download failed", socket_desc);
                         close(socket_desc);
                         return -1;
                         break;
                     default:
                         fprintf(stderr, "client: undefined error during GET\n");
+                        send_msg("File download failed", socket_desc);
                         close(socket_desc);
                         return -1;
                         break;
                 }
-                int response = send_msg("File download successful", socket_desc);
 
-                if(response){
+                if(!send_msg("File download successful", socket_desc)){
                     fprintf(stderr, "client: error reaching server to confirm file transfer in GET\n");
                     close(socket_desc);
                     return -1;

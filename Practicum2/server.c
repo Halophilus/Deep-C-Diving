@@ -3,82 +3,201 @@
  * 
  * adapted from: 
  *   https://www.educative.io/answers/how-to-implement-tcp-sockets-in-c
+ *
+ *   Ben Henshaw / CS5600 / Northeastern University
+ *   Spring 2025 / 4/14/2025
+ *
+ *   Custom implementation of server.c from provided template
  */
 
+#include <stdlib.h>
+#include <signal.h>
 #include "messenger.h"
+int socket_desc, client_sock;
 
 // Function:    handle_inbound
 // ---------------------------
-// Handles commands from a client
-int handle_inbound(int socket_desc)
+// Handles commands from a client, parsing command and target identity to perform some operation
+//
+// Commands:
+// GET: fetches a file from the server and transfers it to client
+//
+int handle_inbound(int client_socket)
 {
     // Receive command
-    char *cmd = receive_msg(socket_desc);
+    char *cmd = receive_msg(client_socket);
     if(!cmd)
     {
         fprintf(stderr, "server.handle_inbound: error receiving command from client\n");
         return -1;
     }
 
+#ifdef DEBUG
+    fprintf(stdout, "DEBUG server.handle_inbound: CMD = %s", cmd);
+#endif
+
     // Parse command
-    if (!strcmp(cmd, "WRITE") && !strcmp(cmd, "GET") && !strcmp(cmd, "RM"))
-    {
+    if (!strcmp(cmd, "WRITE") || !strcmp(cmd, "GET") || !strcmp(cmd, "RM")) {
         // Initiate handshake
-        if(!send_msg("GO", socket_desc))
-        {
-            fprintf(stderr, "server.handle_inbound: handshake initiation aborted\n", cmd);
+        if (!send_msg("GO", client_socket)) {
+            fprintf(stderr, "server.handle_inbound: handshake initiation aborted at GO\n");
             free(cmd);
             return -1;
         }
-    }
-    if (strcmp(response, "GO") == 0) // Approval is given
-    {
-        // Free original response
-        free(response);
-        response = NULL;
 
-        // Send target filename
-        if(!send_msg(target, socket_desc))
-        {
-            fprintf(stderr, "client.handle_outbound: error sending target %s to server\n", target);
+        // Take in target name
+        char *target = receive_msg(client_socket);
+        if (!target) {
+            fprintf(stderr, "server.handle_inbound: error receiving target ID from client\n");
+            free(cmd);
             return -1;
         }
 
-        // Get approval from server
-        response = receive_msg(socket_desc);
-        if(!response)
-        {
-            fprintf(stderr, "client.handle_outbound: error getting server response about target %s\n", target);
+        // Prompt client to fulfill request
+        if (!send_msg("CONTINUE", client_socket)) {
+            fprintf(stderr, "server.handle_inbound: handshake initiation aborted at CONTINUE\n");
+            free(cmd);
+            free(target);
             return -1;
         }
 
-        // If the signal is given to proceed
-        if (strcmp(response, "CONTINUE") == 0)
+        // Behavior controlled by cmd
+        if (!strcmp(cmd, "WRITE")) // Write request
         {
-            free(response);
+            // Attempt file receipt
+            int received = receive_file(target, client_socket);
+            switch (received) {
+                case 0:
+                    break;
+                case 1:
+                    fprintf(stderr, "server.handle_inbound: lost connection during WRITE\n");
+                    send_msg("File write failed", client_socket);
+                    close(client_socket);
+                    free(cmd);
+                    free(target);
+                    return -1;
+                    break;
+                case -1:
+                    fprintf(stderr, "server.handle_inbound: error saving file during WRITE\n");
+                    send_msg("File write failed", client_socket);
+                    close(client_socket);
+                    free(cmd);
+                    free(target);
+                    return -1;
+                    break;
+                default:
+                    fprintf(stderr, "server.handle_inbound: undefined error during WRITE\n");
+                    send_msg("File write failed", client_socket);
+                    close(client_socket);
+                    free(cmd);
+                    free(target);
+                    return -1;
+                    break;
+            }
+
+            // Get update from client
+            if (!send_msg("File written successfully", client_socket)) {
+                fprintf(stderr, "server.handle_inbound: file transfer success message aborted\n");
+                close(client_socket);
+                free(cmd);
+                free(target);
+                return -1;
+            }
+        } else if (!strcmp(cmd, "GET")) // Get request
+        {
+            int sent = send_file(target, client_socket);
+            switch (sent) // Error handling
+            {
+                case 0:
+                    break;
+                case 1:
+                    fprintf(stderr, "server.handle_inbound: lost connection during GET\n");
+                    free(cmd);
+                    free(target);
+                    close(client_socket);
+                    return -1;
+                    break;
+                case -1:
+                    fprintf(stderr, "server.handle_inbound: error opening file during GET\n");
+                    free(cmd);
+                    free(target);
+                    close(client_socket);
+                    return -1;
+                    break;
+                default:
+                    fprintf(stderr, "server.handle_inbound: undefined error during GET\n");
+                    free(cmd);
+                    free(target);
+                    close(client_socket);
+                    return -1;
+                    break;
+            }
+
+            // Confirm receipt with client
+            char *response = receive_msg(client_socket);
+            if (!response) {
+                fprintf(stderr, "server.handle_inbound: error getting server response about target %s\n", target);
+                free(cmd);
+                free(target);
+                close(client_socket);
+                return -1;
+            }
+
+            fprintf(stdout, "client: %s\n", response);
+            free(cmd);
+            free(target);
+            close(client_socket);
             return 0;
-        }
-        else
+        } else if (!strcmp(cmd, "RM")) // File delete request
         {
-            fprintf(stderr, "client.handle_outbound: session aborted by server before file could be sent\n");
-            free(response);
-            return -1;
+            if (!unlink(target)) {
+                fprintf(stdout, "server: %s deleted", target);
+                send_msg("target deleted successfully", client_socket);
+                free(cmd);
+                free(target);
+                close(client_socket);
+                return 0;
+            } else
+            {
+                fprintf(stderr, "server: %s could not be deleted", target);
+                send_msg("target could not be deleted", client_socket);
+                free(cmd);
+                free(target);
+                close(client_socket);
+                return -1;
+            }
+
         }
     }
-    else
-    {
-        fprintf(stderr, "client.handle_outbound: session aborted by server before filename could be processed\n");
-        free(response);
-        return -1;
-    }
+
+    fprintf(stderr, "server: client request did not issue valid command\n");
+    free(cmd);
+    close(client_socket);
 }
+
+// Function:    handle_sigint
+// --------------------------
+// Closes client and server socket upon keyboard interrupt
+void handle_sigint(int sig)
+{
+    fprintf(stdout, "server: shutting down\n");
+    close(socket_desc);
+    close(client_sock);
+    exit(0);
+}
+
+// Function:    main
+// -----------------
+// Modified main function that keeps the server online until a keyboard interrupt is invoked
 int main(void)
 {
-  int socket_desc, client_sock;
   socklen_t client_size;
   struct sockaddr_in server_addr, client_addr;
   char server_message[8196], client_message[8196];
-  
+
+  // Register signature handler
+  signal(SIGINT, handle_sigint);
+
   // Clean buffers:
   memset(server_message, '\0', sizeof(server_message));
   memset(client_message, '\0', sizeof(client_message));
@@ -112,38 +231,27 @@ int main(void)
   }
   printf("\nListening for incoming connections.....\n");
   
-  // Accept an incoming connection:
-  client_size = sizeof(client_addr);
-  client_sock = accept(socket_desc, (struct sockaddr*)&client_addr, &client_size);
-  
-  if (client_sock < 0){
-    printf("Can't accept\n");
-    close(socket_desc);
-    close(client_sock);
-    return -1;
-  }
-  printf("Client connected at IP: %s and port: %i\n", 
-         inet_ntoa(client_addr.sin_addr), 
-         ntohs(client_addr.sin_port));
-  
-  // Receive client's message:
-  if (recv(client_sock, client_message, 
-           sizeof(client_message), 0) < 0){
-    printf("Couldn't receive\n");
-    close(socket_desc);
-    close(client_sock);
-    return -1;
-  }
-  printf("Msg from client: %s\n", client_message);
-  
-  // Respond to client:
-  strcpy(server_message, "This is the server's response message.");
-  
-  if (send(client_sock, server_message, strlen(server_message), 0) < 0){
-    printf("Can't send\n");
-    close(socket_desc);
-    close(client_sock);
-    return -1;
+  // Accept incoming connections on loop:
+  while(1)
+  {
+      client_size = sizeof(client_addr);
+      client_sock = accept(socket_desc, (struct sockaddr*)&client_addr, &client_size);
+
+      // Check success
+      if (client_sock < 0){
+          printf("Can't accept\n");
+          close(socket_desc);
+          close(client_sock);
+          return -1;
+      }
+
+      // Tell console
+      printf("Client connected at IP: %s and port: %i\n",
+             inet_ntoa(client_addr.sin_addr),
+             ntohs(client_addr.sin_port));
+
+      // Parse command
+      handle_inbound(client_sock);
   }
   
   // Closing the socket:

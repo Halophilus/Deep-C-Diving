@@ -81,12 +81,12 @@ clean: CMakeFiles/Practicum2.dir/clean
 CMakeFiles/Practicum2.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Practicum2.dir/build.make CMakeFiles/Practicum2.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Practicum2.dir/build.make CMakeFiles/Practicum2.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="/mnt/c/Users/Ben Henshaw/Documents/Spring 2025 CS5004 TA/Lab 02 - color and unit tests/CS5600/Practicum2/cmake-build-debug/CMakeFiles" --progress-num=1,2,3,4 "Built target Practicum2"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="/mnt/c/Users/Ben Henshaw/Documents/Spring 2025 CS5004 TA/Lab 02 - color and unit tests/CS5600/Practicum2/cmake-build-debug/CMakeFiles" --progress-num=1,2,3,4,5 "Built target Practicum2"
 .PHONY : CMakeFiles/Practicum2.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/Practicum2.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start "/mnt/c/Users/Ben Henshaw/Documents/Spring 2025 CS5004 TA/Lab 02 - color and unit tests/CS5600/Practicum2/cmake-build-debug/CMakeFiles" 4
+	$(CMAKE_COMMAND) -E cmake_progress_start "/mnt/c/Users/Ben Henshaw/Documents/Spring 2025 CS5004 TA/Lab 02 - color and unit tests/CS5600/Practicum2/cmake-build-debug/CMakeFiles" 5
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/Practicum2.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start "/mnt/c/Users/Ben Henshaw/Documents/Spring 2025 CS5004 TA/Lab 02 - color and unit tests/CS5600/Practicum2/cmake-build-debug/CMakeFiles" 0
 .PHONY : CMakeFiles/Practicum2.dir/rule

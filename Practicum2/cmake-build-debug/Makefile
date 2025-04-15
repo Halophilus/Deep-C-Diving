@@ -201,6 +201,30 @@ messenger.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Practicum2.dir/build.make CMakeFiles/Practicum2.dir/messenger.c.s
 .PHONY : messenger.c.s
 
+server.o: server.c.o
+.PHONY : server.o
+
+# target to build an object file
+server.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Practicum2.dir/build.make CMakeFiles/Practicum2.dir/server.c.o
+.PHONY : server.c.o
+
+server.i: server.c.i
+.PHONY : server.i
+
+# target to preprocess a source file
+server.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Practicum2.dir/build.make CMakeFiles/Practicum2.dir/server.c.i
+.PHONY : server.c.i
+
+server.s: server.c.s
+.PHONY : server.s
+
+# target to generate assembly for a file
+server.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Practicum2.dir/build.make CMakeFiles/Practicum2.dir/server.c.s
+.PHONY : server.c.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -219,6 +243,9 @@ help:
 	@echo "... messenger.o"
 	@echo "... messenger.i"
 	@echo "... messenger.s"
+	@echo "... server.o"
+	@echo "... server.i"
+	@echo "... server.s"
 .PHONY : help
 
 

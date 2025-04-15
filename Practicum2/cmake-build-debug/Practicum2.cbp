@@ -88,6 +88,9 @@
 		<Unit filename="/mnt/c/Users/Ben Henshaw/Documents/Spring 2025 CS5004 TA/Lab 02 - color and unit tests/CS5600/Practicum2/messenger.h">
 			<Option target="Practicum2"/>
 		</Unit>
+		<Unit filename="/mnt/c/Users/Ben Henshaw/Documents/Spring 2025 CS5004 TA/Lab 02 - color and unit tests/CS5600/Practicum2/server.c">
+			<Option target="Practicum2"/>
+		</Unit>
 		<Unit filename="/mnt/c/Users/Ben Henshaw/Documents/Spring 2025 CS5004 TA/Lab 02 - color and unit tests/CS5600/Practicum2/CMakeLists.txt">
 			<Option virtualFolder="CMake Files\"/>
 		</Unit>

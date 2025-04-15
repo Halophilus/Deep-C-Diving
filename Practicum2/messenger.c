@@ -7,8 +7,37 @@
  * Source file for symmetric TCP operations
  */
 
-
 #include "messenger.h"
+
+// Helper Function:    data_per_column
+// -----------------------------------
+// Find the amount of data in the file proportional to a single column in stdout
+//
+// file_size: size of file in bytes
+//
+// returns transfer volume per column in a progress bar
+double data_per_column(const uint32_t file_size)
+{
+    struct winsize w;
+    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+    int window_width = w.ws_col;
+    return(double)file_size / (double)window_width;
+}
+
+// Helper Function:    print_progress_bar
+// -------------------------------
+// Prints '#'s proportionate to download/upload progress
+//
+// previous_progress: represents amount of progress since progress bar last updated
+// column_volume: write volume proportional to 1*'#'
+void print_progress_bar(double *previous_progress, const double column_volume)
+{
+    while (*previous_progress > column_volume)
+    {
+        fprintf(stdout, "#");
+        *previous_progress -= column_volume;
+    }
+}
 
 // Function:	send_file
 // ----------------------
@@ -49,12 +78,12 @@ int send_file(char *filename, int socket_desc)
 	// File transfer progress display information
 	size_t bytes_read;
 	size_t bytes_transferred = 0;
-	struct winsize w;
-	ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-	int window_width = w.ws_col;
-    int previous_progress = 0;
-	double column_transfer_size = (double)file_size / (double)window_width;
-	
+    double previous_progress = 0;
+    double column_volume = data_per_column(file_size);
+
+    // Indent for progress bar
+    fprintf(stdout, "\n");
+
 	// Buffered iteration through the file
 	while ((bytes_read = fread(buffer, 1, BUFFER_SIZE, fp)) > 0)
 	{
@@ -77,14 +106,9 @@ int send_file(char *filename, int socket_desc)
 
 		// Handle progress bar logic
 		bytes_transferred += bytes_read;
-		previous_progress += bytes_read;
+		previous_progress += (double)bytes_read;
 
-		while (previous_progress > column_transfer_size)
-		{
-			fprintf(stdout, "#");
-			previous_progress -= column_transfer_size;
-			
-		}
+        print_progress_bar(&previous_progress, column_volume);
 	}
 
     // Add newline after progress bar terminates
@@ -184,18 +208,24 @@ int receive_file(char *filename, int socket_desc)
 	// Receive file data
 	char buffer[BUFFER_SIZE];
 	int total_bytes_received = 0;
-	while (total_bytes_received < file_size)
+    double column_volume = data_per_column(file_size);
+    double previous_progress = 0;
+
+    // Indent for progress bar
+    fprintf(stdout, "\n");
+
+    while (total_bytes_received < file_size)
 	{
 		int bytes_received = recv(socket_desc, buffer, BUFFER_SIZE, 0);
 	       	if (bytes_received < 0)
 		{
-			fprintf(stderr, "receive_file: error occurred receiving data\n");
+			fprintf(stderr, "\nreceive_file: error occurred receiving data\n");
 			fclose(fp);
 			return 1;
 		}
 		if (bytes_received == 0)
 		{
-			fprintf(stderr, "receive_file: sender disconnected mid-stream\n");
+			fprintf(stderr, "\nreceive_file: sender disconnected mid-stream\n");
 			fclose(fp);
 			return 1;
 		}
@@ -203,6 +233,9 @@ int receive_file(char *filename, int socket_desc)
 		// Write the received data to file
 		fwrite(buffer, 1, bytes_received, fp);
 		total_bytes_received += bytes_received;
+        previous_progress += (double)bytes_received;
+
+        print_progress_bar(&previous_progress, column_volume);
 
 #ifdef DEBUG
 		fprintf(stdout, "DEBUG: receive_file: %d bytes received of %d total bytes\n", bytes_received, total_bytes_received);

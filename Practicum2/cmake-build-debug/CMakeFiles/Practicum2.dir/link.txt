@@ -1,1 +1,1 @@
-/usr/bin/cc -g CMakeFiles/Practicum2.dir/main.c.o CMakeFiles/Practicum2.dir/messenger.c.o CMakeFiles/Practicum2.dir/client.c.o -o Practicum2 
+/usr/bin/cc -g CMakeFiles/Practicum2.dir/main.c.o CMakeFiles/Practicum2.dir/messenger.c.o CMakeFiles/Practicum2.dir/client.c.o CMakeFiles/Practicum2.dir/server.c.o -o Practicum2 
