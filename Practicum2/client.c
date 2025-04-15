@@ -122,6 +122,7 @@ int main(int argc, char *argv[])
 	// Handle different commands
 	if (strcmp(argv[1], "WRITE") == 0) //
     {
+        if (argc < 4) goto error;
         if (!handle_outbound(argv[1], argv[3], socket_desc))
         {
             // Attempt to send the file
@@ -169,47 +170,48 @@ int main(int argc, char *argv[])
         }
     } else if (strcmp(argv[1], "GET") == 0) // Requesting a file from the server
     {
-            if (!handle_outbound(argv[1], argv[2], socket_desc))
+        if (argc < 4) goto error;
+        if (!handle_outbound(argv[1], argv[2], socket_desc))
+        {
+            int received = receive_file(argv[3], socket_desc);
+            switch (received)
             {
-                int received = receive_file(argv[3], socket_desc);
-                switch (received)
-                {
-                    case 0:
-                        break;
-                    case 1:
-                        fprintf(stderr, "client: lost connection during GET\n");
-                        send_msg("File download failed", socket_desc);
-                        close(socket_desc);
-                        return -1;
-                        break;
-                    case -1:
-                        fprintf(stderr, "client: error saving file during GET\n");
-                        send_msg("File download failed", socket_desc);
-                        close(socket_desc);
-                        return -1;
-                        break;
-                    default:
-                        fprintf(stderr, "client: undefined error during GET\n");
-                        send_msg("File download failed", socket_desc);
-                        close(socket_desc);
-                        return -1;
-                        break;
-                }
-
-                if(!send_msg("File download successful", socket_desc)){
-                    fprintf(stderr, "client: error reaching server to confirm file transfer in GET\n");
+                case 0:
+                    break;
+                case 1:
+                    fprintf(stderr, "client: lost connection during GET\n");
+                    send_msg("File download failed", socket_desc);
                     close(socket_desc);
                     return -1;
-                }
-                fprintf(stdout, "client: GET request successful");
-                close(socket_desc);
-                return 0;
-            } else
-            {
-                fprintf(stderr, "client: GET request aborted by server before file could be sent");
+                    break;
+                case -1:
+                    fprintf(stderr, "client: error saving file during GET\n");
+                    send_msg("File download failed", socket_desc);
+                    close(socket_desc);
+                    return -1;
+                    break;
+                default:
+                    fprintf(stderr, "client: undefined error during GET\n");
+                    send_msg("File download failed", socket_desc);
+                    close(socket_desc);
+                    return -1;
+                    break;
+            }
+
+            if(!send_msg("File download successful", socket_desc)){
+                fprintf(stderr, "client: error reaching server to confirm file transfer in GET\n");
                 close(socket_desc);
                 return -1;
             }
+            fprintf(stdout, "client: GET request successful");
+            close(socket_desc);
+            return 0;
+        } else
+        {
+            fprintf(stderr, "client: GET request aborted by server before file could be sent");
+            close(socket_desc);
+            return -1;
+        }
     } else if (strcmp(argv[1], "RM") == 0)
     {
         if (!handle_outbound(argv[1],argv[2], socket_desc))
@@ -234,8 +236,12 @@ int main(int argc, char *argv[])
         }
     }
 
+
+    fprintf(stderr, "client no-op: rfs RM [target path]\n");
+
 	// Syntax error
-    fprintf(stderr, "client no-op: rfs {GET,WRITE,RM} [target path] [destination path]\n");
+    error:
+    fprintf(stderr, "client no-op: rfs {GET,WRITE} [target path] [destination path]\n");
 	close(socket_desc);
 	
 	return 0;

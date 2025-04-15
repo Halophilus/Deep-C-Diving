@@ -96,7 +96,7 @@ int handle_inbound(int client_socket)
             }
 
             // Get update from client
-            if (!send_msg("\nFile written successfully", client_socket)) {
+            if (!send_msg("File written successfully", client_socket)) {
                 fprintf(stderr, "server.handle_inbound: file transfer success message aborted\n");
                 close(client_socket);
                 free(cmd);
@@ -176,6 +176,7 @@ int handle_inbound(int client_socket)
 	return -1;
     }
 
+    return -1;
 }
 
 // Function:    handle_sigint
