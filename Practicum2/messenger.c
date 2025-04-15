@@ -110,10 +110,10 @@ int send_file(char *filename, int socket_desc)
 		}
 
 		// Handle progress bar logic
-		total_bytes_transferred += bytes_sent;
+		total_bytes_transferred += bytes_read;
 		previous_progress += (double)bytes_read;
 
-        	print_progress_bar(&previous_progress, column_volume);
+        print_progress_bar(&previous_progress, column_volume);
 	}
 
     // Add newline after progress bar terminates
@@ -237,6 +237,8 @@ int receive_file(char *filename, int socket_desc)
 
 		// Write the received data to file
 		fwrite(buffer, 1, bytes_received, fp);
+
+        // Handle progress bar logic
 		total_bytes_received += bytes_received;
         previous_progress += (double)bytes_received;
 
