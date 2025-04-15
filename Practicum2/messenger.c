@@ -21,7 +21,11 @@ double data_per_column(const uint32_t file_size)
     struct winsize w;
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
     int window_width = w.ws_col;
-    return(double)file_size / (double)window_width;
+	double column_volume = (double)file_size / (double)window_width;
+#ifdef DEBUG
+	fprintf(stdout, "\nmessenger.data_per_column: %d columns in this window, data per column: %lf\n", window_width, column_volume);
+#endif
+    return column_volume;
 }
 
 // Helper Function:    print_progress_bar
@@ -35,6 +39,7 @@ void print_progress_bar(double *previous_progress, const double column_volume)
     while (*previous_progress > column_volume)
     {
         fprintf(stdout, "#");
+	fflush(stdout);
         *previous_progress -= column_volume;
     }
 }
@@ -76,10 +81,10 @@ int send_file(char *filename, int socket_desc)
 	}
 
 	// File transfer progress display information
-	size_t bytes_read;
-	size_t bytes_transferred = 0;
-    double previous_progress = 0;
-    double column_volume = data_per_column(file_size);
+	int bytes_read;
+	int total_bytes_transferred = 0;
+	double previous_progress = 0;
+	double column_volume = data_per_column(file_size);
 
     // Indent for progress bar
     fprintf(stdout, "\n");
@@ -105,10 +110,10 @@ int send_file(char *filename, int socket_desc)
 		}
 
 		// Handle progress bar logic
-		bytes_transferred += bytes_read;
+		total_bytes_transferred += bytes_sent;
 		previous_progress += (double)bytes_read;
 
-        print_progress_bar(&previous_progress, column_volume);
+        	print_progress_bar(&previous_progress, column_volume);
 	}
 
     // Add newline after progress bar terminates
@@ -175,7 +180,7 @@ int receive_file(char *filename, int socket_desc)
 
 	// Iterate through version numbers until an unused filename is discovered
     snprintf(filename_buffer, BUFFER_SIZE, "%s", filename);
-    while (access(filename_buffer, F_OK) == 0) {
+    	while (access(filename_buffer, F_OK) == 0) {
         snprintf(filename_buffer, BUFFER_SIZE, "%s%d", filename, version++);
     }
 
@@ -237,9 +242,6 @@ int receive_file(char *filename, int socket_desc)
 
         print_progress_bar(&previous_progress, column_volume);
 
-#ifdef DEBUG
-		fprintf(stdout, "DEBUG: receive_file: %d bytes received of %d total bytes\n", bytes_received, total_bytes_received);
-#endif
 
 	}
 #ifdef DEBUG
