@@ -42,8 +42,8 @@ void print_progress_bar(double *previous_progress, const double column_volume)
     while (*previous_progress > column_volume)
     {
         fprintf(stdout, "#");
-	fflush(stdout);
         *previous_progress -= column_volume;
+        fflush(stdout);
     }
 }
 
@@ -75,6 +75,9 @@ int send_file(char *filename, int socket_desc)
 	uint32_t file_size = (uint32_t) ftell(fp);
 	rewind(fp);
 
+    // Discovering column volume before converting to network bit order
+    double column_volume = data_per_column(file_size);
+
     file_size = htonl(file_size);
 	if (send(socket_desc, &file_size, sizeof(file_size), 0) == -1)
 	{
@@ -87,7 +90,6 @@ int send_file(char *filename, int socket_desc)
 	int bytes_read;
 	int total_bytes_transferred = 0;
 	double previous_progress = 0;
-	double column_volume = data_per_column(file_size);
     // Indent for progress bar
     fprintf(stdout, "\n");
 
@@ -116,7 +118,7 @@ int send_file(char *filename, int socket_desc)
 		previous_progress += (double)bytes_read;
 
 #ifdef DEBUG
-        fprintf(stdout, "\nDEBUG messenger.send_file: %d bytes_read\n", bytes_read, previous_progress);
+        fprintf(stdout, "\nDEBUG messenger.send_file: %d bytes_read\n", bytes_read);
 #endif
         print_progress_bar(&previous_progress, column_volume);
 	}
