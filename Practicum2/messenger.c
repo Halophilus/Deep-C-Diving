@@ -256,13 +256,13 @@ int receive_file(char *filename, int socket_desc)
 // msg: string containing message
 // socket_desc: file descriptor for destination socket
 //
-// returns 0 on success, -1 on failure
+// returns 1 on success, 0 on failure
 int send_msg(char *msg, int socket_desc)
 {
 	if (send(socket_desc, msg, BUFFER_SIZE, 0) < 0)
-		return -1;
-	else
 		return 0;
+	else
+		return 1;
 }
 
 // Function:	receive_msg
@@ -272,7 +272,7 @@ int send_msg(char *msg, int socket_desc)
 // msg: string containing message
 // socket_desc: file descriptor for origin socket
 //
-// returns 0 on success, -1 on failure
+// returns msg
 char* receive_msg(int socket_desc)
 {
 	char *msg = (char *)malloc(BUFFER_SIZE);
