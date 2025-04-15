@@ -76,7 +76,6 @@ int handle_inbound(int client_socket)
                     free(cmd);
                     free(target);
                     return -1;
-                    break;
                 case -1:
                     fprintf(stderr, "\nserver.handle_inbound: error saving file during WRITE\n");
                     send_msg("File write failed", client_socket);
@@ -84,7 +83,6 @@ int handle_inbound(int client_socket)
                     free(cmd);
                     free(target);
                     return -1;
-                    break;
                 default:
                     fprintf(stderr, "\nserver.handle_inbound: undefined error during WRITE\n");
                     send_msg("File write failed", client_socket);
@@ -92,7 +90,6 @@ int handle_inbound(int client_socket)
                     free(cmd);
                     free(target);
                     return -1;
-                    break;
             }
 
             // Get update from client

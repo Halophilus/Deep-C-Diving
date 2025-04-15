@@ -9,7 +9,6 @@
  *
  *	 Custom implementation of client.c from provided template
  */
-
 #include "messenger.h"
 
 // Function:    handle_outbound
@@ -135,17 +134,14 @@ int main(int argc, char *argv[])
                     fprintf(stderr, "client: lost connection during WRITE\n");
                     close(socket_desc);
                     return -1;
-                    break;
                 case -1:
                     fprintf(stderr, "client: error opening file during WRITE\n");
                     close(socket_desc);
                     return -1;
-                    break;
                 default:
                     fprintf(stderr, "client: undefined error during WRITE\n");
                     close(socket_desc);
                     return -1;
-                    break;
             }
 
             // Wait for server response (which contains versioned filename)
@@ -183,19 +179,16 @@ int main(int argc, char *argv[])
                     send_msg("File download failed", socket_desc);
                     close(socket_desc);
                     return -1;
-                    break;
                 case -1:
                     fprintf(stderr, "client: error saving file during GET\n");
                     send_msg("File download failed", socket_desc);
                     close(socket_desc);
                     return -1;
-                    break;
                 default:
                     fprintf(stderr, "client: undefined error during GET\n");
                     send_msg("File download failed", socket_desc);
                     close(socket_desc);
                     return -1;
-                    break;
             }
 
             if(!send_msg("File download successful", socket_desc)){
