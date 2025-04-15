@@ -19,7 +19,7 @@
 #include <malloc.h>
 
 #define BUFFER_SIZE 1028
-#define DEBUG
+//#define DEBUG
 
 // Function:	send_file
 // ----------------------
