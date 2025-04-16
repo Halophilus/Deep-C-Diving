@@ -113,7 +113,98 @@ int handle_outbound(char *cmd, char *target, int socket_desc)
 // returns 0 on success, 1 on file error, -1 on connection error
 int handle_write(char *target, int socket_desc)
 {
-    
+    // Attempt to send the file
+    int sent = send_file(target, socket_desc);
+    switch (sent) // Error handling
+    {
+        case 0:
+            break;
+        case 1:
+            return handle_error(NULL, socket_desc,
+                                "client: lost connection during WRITE\n",
+                                NULL);
+        case -1:
+            return handle_error(NULL, socket_desc,
+                                "client: error opening file during WRITE\n",
+                                NULL);
+        default:
+            return handle_error(NULL, socket_desc,
+                                "client: undefined error during WRITE\n",
+                                NULL);
+    }
+
+    // Wait for server response (which contains versioned filename)
+    char *response = receive_msg(socket_desc);
+
+    if (!response) {
+        return handle_error(response, socket_desc,
+                            "client: error getting server response after WRITE\n",
+                            NULL);
+    }
+
+    fprintf(stdout, "server: %s\n", response);
+    clean_up(response, socket_desc);
+    return 0;
+}
+
+// Function:    handle_get
+// -------------------------
+// Handling outbound get requests
+//
+// target:      target filename
+// socket_desc: client socket fd
+//
+// returns 0 on success, 1 on file error, -1 on connection error
+int handle_get(char *target, int socket_desc)
+{
+    int received = receive_file(target, socket_desc);
+    switch (received)
+    {
+        case 0:
+            break;
+        case 1:
+            return handle_error(NULL, socket_desc,
+                                "client: lost connection during GET\n",
+                                "File download failed");
+        case -1:
+            return handle_error(NULL, socket_desc,
+                                "client: error saving file during GET\n",
+                                "File download failed");
+        default:
+            return handle_error(NULL, socket_desc,
+                                "client: undefined error during GET\n",
+                                "File download failed");
+    }
+
+    if(!send_msg("File download successful", socket_desc)){
+        return handle_error(NULL, socket_desc,
+                            "client: error reaching server to confirm file transfer in GET\n",
+                            NULL);
+
+    }
+    fprintf(stdout, "client: GET request successful");
+    clean_up(NULL, socket_desc);
+    return 0;
+}
+// Function:    handle_get
+// -------------------------
+// Handling outbound rm requests
+//
+// target:      target filename
+// socket_desc: client socket fd
+//
+// returns 0 on success, 1 on file error, -1 on connection error
+int handle_rm(int socket_desc)
+{
+    char *response = receive_msg(socket_desc);
+
+    if (!response) {
+        return handle_error(NULL, socket_desc, "client: error getting server response after RM\n", NULL);
+    }
+
+    fprintf(stdout, "server: %s\n", response);
+    clean_up(response, socket_desc);
+    return 0;
 }
 
 // Function:	main
@@ -138,37 +229,7 @@ int main(int argc, char *argv[])
         if (!handle_outbound(argv[1], argv[3], socket_desc))
         {
             // Attempt to send the file
-            int sent = send_file(argv[2], socket_desc);
-            switch (sent) // Error handling
-            {
-                case 0:
-                    break;
-                case 1:
-                    return handle_error(NULL, socket_desc,
-                                 "client: lost connection during WRITE\n",
-                                 NULL);
-                case -1:
-                    return handle_error(NULL, socket_desc,
-                                        "client: error opening file during WRITE\n",
-                                        NULL);
-                default:
-                    return handle_error(NULL, socket_desc,
-                                        "client: undefined error during WRITE\n",
-                                        NULL);
-            }
-
-            // Wait for server response (which contains versioned filename)
-            char *response = receive_msg(socket_desc);
-
-            if (!response) {
-                return handle_error(response, socket_desc,
-                                    "client: error getting server response after WRITE\n",
-                                    NULL);
-            }
-
-            fprintf(stdout, "server: %s\n", response);
-            clean_up(response, socket_desc);
-            return 0;
+            return handle_write(argv[2], socket_desc);
         } else
         {
             return handle_error(NULL, socket_desc,
@@ -180,34 +241,7 @@ int main(int argc, char *argv[])
         if (argc < 4) goto error;
         if (!handle_outbound(argv[1], argv[2], socket_desc))
         {
-            int received = receive_file(argv[3], socket_desc);
-            switch (received)
-            {
-                case 0:
-                    break;
-                case 1:
-                    return handle_error(NULL, socket_desc,
-                                        "client: lost connection during GET\n",
-                                        "File download failed");
-                case -1:
-                    return handle_error(NULL, socket_desc,
-                                        "client: error saving file during GET\n",
-                                        "File download failed");
-                default:
-                    return handle_error(NULL, socket_desc,
-                                        "client: undefined error during GET\n",
-                                        "File download failed");
-            }
-
-            if(!send_msg("File download successful", socket_desc)){
-                return handle_error(NULL, socket_desc,
-                                    "client: error reaching server to confirm file transfer in GET\n",
-                                    NULL);
-
-            }
-            fprintf(stdout, "client: GET request successful");
-            clean_up(NULL, socket_desc);
-            return 0;
+            return handle_get(argv[3], socket_desc);
         } else
         {
             return handle_error(NULL, socket_desc,
@@ -219,15 +253,7 @@ int main(int argc, char *argv[])
     {
         if (!handle_outbound(argv[1],argv[2], socket_desc))
         {
-            char *response = receive_msg(socket_desc);
-
-            if (!response) {
-                return handle_error(NULL, socket_desc, "client: error getting server response after RM\n", NULL);
-            }
-
-            fprintf(stdout, "server: %s\n", response);
-            clean_up(response, socket_desc);
-            return 0;
+            return handle_rm(socket_desc);
         } else
         {
             return handle_error(NULL, socket_desc, "client: RM request aborted by server\n", NULL);
