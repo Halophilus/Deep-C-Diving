@@ -26,9 +26,24 @@ typedef struct file_handler {
     request_handler_fn handler_fn;
 } file_handler_t;
 
+typedef struct client {
+    int socket_desc;
+} client_t;
+
+// Function:    make_request
+// -------------------------
+// Searches file_map for a file_handler_t with a matching filename
+// Creates a new one and pushes to file_map if none
+//
+// filename:    requested filename
+// socket_desc: fd for client socket
+void make_request(char* filename, int socket_desc, request_handler_fn handler_fn);
+
+// Function:    file_worker
+// ------------------------
+// Iteratively processes clients in a handler's queue
+void *file_worker(void *arg);
 
 
 
-
-
-#endif WAITINGROOM_H
+#endif //WAITINGROOM_H

@@ -1,22 +1,49 @@
-CC = gcc
-CFLAGS = -Wall -g
+# Compiler and flags
+CC      := gcc
+CFLAGS  := -Wall -Wextra -g -Iinclude -MMD -MP
+LDFLAGS :=
 
-all: server client
+# Directories
+SRC_DIR := src
+INC_DIR := include
+OBJ_DIR := build
 
-server: server.o messenger.o
-	$(CC) $(CFLAGS) -o server server.o messenger.o
+# Source files
+SRCS := $(wildcard $(SRC_DIR)/*.c)
 
-client: client.o messenger.o
-	$(CC) $(CFLAGS) -o client client.o messenger.o
+# Object files (.c -> .o) and dependency files (.c -> .d)
+OBJS := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS))
+DEPS := $(OBJS:.o=.d)
 
-server.o: server.c messenger.h
-	$(CC) $(CFLAGS) -c server.c
+# Executables
+SERVER := server
+CLIENT := client
 
-client.o: client.c messenger.h
-	$(CC) $(CFLAGS) -c client.c
+# Object groups
+SERVER_OBJS := $(OBJ_DIR)/server.o $(OBJ_DIR)/waitingroom.o $(OBJ_DIR)/queue.o $(OBJ_DIR)/messenger.o
+CLIENT_OBJS := $(OBJ_DIR)/client.o $(OBJ_DIR)/messenger.o
 
-messenger.o: messenger.c messenger.h
-	$(CC) $(CFLAGS) -c messenger.c
+# Default target
+all: $(SERVER) $(CLIENT)
 
+# Build server
+$(SERVER): $(SERVER_OBJS)
+	$(CC) $^ -o $@ $(LDFLAGS)
+
+# Build client
+$(CLIENT): $(CLIENT_OBJS)
+	$(CC) $^ -o $@ $(LDFLAGS)
+
+# Pattern rule for building .o files
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Include generated dependency files
+-include $(DEPS)
+
+# Clean rule
 clean:
-	rm -f *.o server client
+	rm -rf $(OBJ_DIR) $(SERVER) $(CLIENT)
+
+.PHONY: all clean

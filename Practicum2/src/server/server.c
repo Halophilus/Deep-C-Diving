@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include "messenger.h"
+#include "waitingroom.h"
 
 int socket_desc, client_sock;
 
