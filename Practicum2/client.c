@@ -10,7 +10,20 @@
  *	 Custom implementation of client.c from provided template
  */
 #include "messenger.h"
+#include "tcp.h"
 
+// Function: clean_up
+// ------------------
+// Frees dynamic resources and closes socket
+void clean_up(char *response, int socket_desc)
+{
+    free(response);
+    close(socket_desc);
+}
+
+// Function:    handle_error
+// -------------------------
+// Handles errors in 
 // Function:    handle_outbound
 // ----------------------------
 // Passes a command and a target to a TCP socket and confirms receipt
@@ -90,33 +103,7 @@ int main(int argc, char *argv[])
 	}
 
     // Init client
-	int socket_desc;
-	struct sockaddr_in server_addr;
-	char server_message[2000], client_message[2000];
-	
-	// Clean buffers:
-	memset(server_message,'\0',sizeof(server_message));
-	memset(client_message,'\0',sizeof(client_message));
-	
-	// Create socket:
-	socket_desc = socket(AF_INET, SOCK_STREAM, 0);
-	if(socket_desc < 0){
-		fprintf(stderr, "client: unable to create socket\n");
-		close(socket_desc);
-		return -1;
-	}	
-	
-	// Set port and IP the same as server-side:
-	server_addr.sin_family = AF_INET;
-	server_addr.sin_port = htons(2000);
-	server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-	
-	// Send connection request to server:
-	if(connect(socket_desc, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0){
-		fprintf(stderr, "client: unable to connect to server\n");
-		close(socket_desc);
-		return -1;
-	}
+	int socket_desc = client_init();
 	
 	// Handle different commands
 	if (strcmp(argv[1], "WRITE") == 0) //
