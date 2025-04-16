@@ -265,10 +265,10 @@ void *file_worker(void *arg)
 
 }
 
-// Function:    map_init
+// Function:    waiting_room_init
 // ---------------------
 // Initializes file_map
-void map_init()
+void waiting_room_init()
 {
     file_map = create_queue();
     shutdown_signal = 0;
@@ -288,7 +288,7 @@ void cleanup_waiting_room(void)
         file_handler_t *handler = (file_handler_t *)pop_queue(file_map);
 
         // Deal with threads
-        pthread_cond_signal(&handler->cond); // Wake up babe, the shutdown flag is raised
+        pthread_cond_signal(&handler->cond); // Wake up babe, the shutdown flag was raised
         pthread_join(handler->tid, NULL); // Join the threads
 
         // Destroy mutex/conditional

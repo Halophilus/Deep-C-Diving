@@ -10,6 +10,8 @@
 
 #ifndef WAITINGROOM_H
 #define WAITINGROOM_H
+#define DEBUG
+
 #include "queue.h"
 #include <pthread.h>
 #include <unistd.h>
@@ -54,7 +56,7 @@ void *file_worker(void *arg);
 // Function:    map_init
 // ---------------------
 // Initializes file_map
-void map_init();
+void waiting_room_init();
 
 // Function:    cleanup_waiting_room
 // --------------------------------

@@ -77,4 +77,4 @@ int send_msg(char *msg, int socket_desc);
 // returns 0 on success, -1 on failure
 char* receive_msg(int socket_desc);
 
-#endif
+#endif //MESSENGER_H

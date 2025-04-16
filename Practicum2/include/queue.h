@@ -6,6 +6,8 @@
  *
  * Header file for process queue
  */
+#ifndef QUEUE_H
+#define QUEUE_H
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -90,4 +92,4 @@ void* pop_queue(queue_t* queue);
 // Destroys a queue
 void destroy_queue(queue_t* queue);
 
-
+#endif // QUEUE_H

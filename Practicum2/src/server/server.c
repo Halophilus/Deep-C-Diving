@@ -228,9 +228,9 @@ int handle_inbound(int client_socket)
 void handle_sigint(int sig)
 {
     fprintf(stdout, "\nserver: shutting down\n");
+    cleanup_waiting_room();
     close(socket_desc);
-    close(client_sock);
-    exit(0);
+    exit(sig);
 }
 
 // Function:    main
@@ -244,11 +244,11 @@ int main(void)
   // Register signature handler
   signal(SIGINT, handle_sigint);
   
-  // Create socket:
+  // Initialize server, open inbound socket
   socket_desc = server_init();
 
   // Initialize waiting room / file map
-  map_init();
+  waiting_room_init();
 
   // Accept incoming connections on loop:
   while(1)
@@ -259,9 +259,9 @@ int main(void)
       // Check success
       if (client_sock < 0){
           printf("Can't accept\n");
-          close(socket_desc);
           close(client_sock);
-          return -1;
+          handle_error(NULL, socket_desc, "client: error getting server response after RM\n", NULL);
+          handle_sigint(-1);
       }
 
       // Tell console
@@ -269,13 +269,17 @@ int main(void)
              inet_ntoa(client_addr.sin_addr),
              ntohs(client_addr.sin_port));
 
+      // Get the target filename
+      char *filename = receive_msg(client_sock);
+
+      if (!filename) {
+          close(client_sock);
+          handle_error(NULL, socket_desc, "client: error getting server response after RM\n", NULL);
+          handle_sigint(-1);
+      }
+
       // Pass request to the waiting room
-      handle_inbound(client_sock);
+      make_request(filename, client_sock, handle_inbound);
   }
-  
-  // Closing the socket:
-  close(client_sock);
-  close(socket_desc);
-  
-  return 0;
+
 }

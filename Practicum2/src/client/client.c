@@ -219,13 +219,23 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-    // Init client
+    // Init client, get outbound socket
 	int socket_desc = client_init();
 	
 	// Handle different commands
 	if (strcmp(argv[1], "WRITE") == 0) //
     {
         if (argc < 4) goto error;
+
+        // Send target file to server
+        if(!send_msg(argv[3], socket_desc)){
+            return handle_error(NULL, socket_desc,
+                                "client: error sending target file for WRITE request\n",
+                                NULL);
+
+        }
+
+        // Initiate outbound handshake
         if (!handle_outbound(argv[1], argv[3], socket_desc))
         {
             // Attempt to send the file
@@ -239,6 +249,15 @@ int main(int argc, char *argv[])
     } else if (strcmp(argv[1], "GET") == 0) // Requesting a file from the server
     {
         if (argc < 4) goto error;
+
+        // Send target file to server
+        if(!send_msg(argv[2], socket_desc)){
+            return handle_error(NULL, socket_desc,
+                                "client: error sending target file for GET request\n",
+                                NULL);
+
+        }
+
         if (!handle_outbound(argv[1], argv[2], socket_desc))
         {
             return handle_get(argv[3], socket_desc);
@@ -251,6 +270,14 @@ int main(int argc, char *argv[])
 
     } else if (strcmp(argv[1], "RM") == 0)
     {
+        // Send target file to server
+        if(!send_msg(argv[2], socket_desc)){
+            return handle_error(NULL, socket_desc,
+                                "client: error sending target file for GET request\n",
+                                NULL);
+
+        }
+
         if (!handle_outbound(argv[1],argv[2], socket_desc))
         {
             return handle_rm(socket_desc);
