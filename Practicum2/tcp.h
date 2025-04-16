@@ -8,19 +8,11 @@
  */
 #ifndef TCP_H
 #define TCP_H
+#include <sys/socket.h>
+#include <stdio.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 
-// Function:    server_init
-// ------------------------
-// Initializes a TCP server
-//
-// Returns fd associated with socket
-int server_init();
 
-// Function:    client_init
-// ------------------------
-// Initializes a TCP client and attempts to connect to server
-//
-// Returns fd associated with socket
-int client_init();
 
 #endif TCP_H

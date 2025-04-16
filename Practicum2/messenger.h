@@ -20,6 +20,22 @@
 
 #define BUFFER_SIZE 1028
 #define DEBUG
+#define DEFAULT_ADDRESS "127.0.0.1"
+#define DEFAULT_PORT 2000
+
+// Function:    server_init
+// ------------------------
+// Initializes a TCP server
+//
+// Returns fd associated with socket
+int server_init();
+
+// Function:    client_init
+// ------------------------
+// Initializes a TCP client and attempts to connect to server
+//
+// Returns fd associated with socket
+int client_init();
 
 // Function:	send_file
 // ----------------------
