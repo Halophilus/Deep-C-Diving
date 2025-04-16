@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include "messenger.h"
-#include "tcp.h"
+
 int socket_desc, client_sock;
 
 // Function:    clean_up
@@ -187,7 +187,7 @@ int handle_inbound(int client_socket)
                                 "\nserver.handle_inbound: handshake initiation aborted at GO\n",
                                 NULL);
         // Take in target name
-         = receive_msg(client_socket);
+        target = receive_msg(client_socket);
         if (!target)
             return handle_error(cmd, NULL, client_socket,
                                 "\nserver.handle_inbound: error receiving target ID from client\n",

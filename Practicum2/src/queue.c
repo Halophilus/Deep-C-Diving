@@ -10,16 +10,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Struct:	process_t
-// ----------------------
-// Stores a process
-typedef struct
-{
-	int identifier;
-	char *name;
-	long runtime;
-	unsigned int priority;
-} process_t;
 
 // Struct:	node_t
 // -------------------
@@ -177,8 +167,7 @@ void remove_node(queue_t* queue, node_t* node)
 	{
 		queue->back = prev_node;
 	}
-
-	free(node);
+    free(node);
 }
 
 // Function:	pop_queue
@@ -194,56 +183,5 @@ void* pop_queue(queue_t* queue)
     return data;
 }
 
-// Function:	remove_process
-// ----------------------------
-// Removes the process with the highest priority and returns the node
-//
-// queue: any queue_t*
-//
-// returns: process_t* of highest priority
-process_t* remove_process(queue_t* queue)
-{
-	node_t* current_node;	
-	node_t* priority_node;
-
-	process_t* current_process;
-	process_t* max_process;
-	
-	int priority_max;
-
-	// If the queue is empty
-	if (get_queue_size(queue) == 0)
-	{
-		printf("queue.remove_process() called on an empty queue!\n");
-		return NULL;
-	}
-	
-	// Pull data from the front element in the queue
-	current_node = queue->front;
-	priority_node = current_node;
-	max_process = (process_t *)(current_node->data);	
-	priority_max = max_process->priority;
-
-	// For all other circumstances
-	for (current_node = current_node->next; 
-	     current_node != queue->front; // Base case for a circular queue
-	     current_node = current_node->next)
-	{
-		// Cast the data at the current node
-		current_process = ( (process_t *)(current_node->data) );
-		
-		// If the priority of this process is higher than max
-		if (current_process->priority > priority_max)
-		{
-			priority_max = current_process->priority;
-			priority_node = current_node;
-			max_process = current_process;
-		}
-	}
-	
-	// Remove the node with the highest priority
-	remove_node(queue, priority_node);
-	return max_process;
-}	
 
 
