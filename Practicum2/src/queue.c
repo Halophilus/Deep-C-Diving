@@ -183,5 +183,18 @@ void* pop_queue(queue_t* queue)
     return data;
 }
 
+// Function:    destroy_queue
+// --------------------------
+// Destroys a queue
+void destroy_queue(queue_t* queue)
+{
+    while(get_queue_size(queue) != 0)
+    {
+        void *data = pop_queue(queue);
+        free(data);
+    }
+
+    free(queue);
+}
 
 

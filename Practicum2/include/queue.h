@@ -85,6 +85,9 @@ void remove_node(queue_t* queue, node_t* node);
 // queue: some queue_t*
 void* pop_queue(queue_t* queue);
 
-
+// Function:    destroy_queue
+// --------------------------
+// Destroys a queue
+void destroy_queue(queue_t* queue);
 
 

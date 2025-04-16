@@ -1,3 +1,4 @@
+
 /*
  * waitingroom.h / Practicum 2
  *
@@ -11,10 +12,14 @@
 #define WAITINGROOM_H
 #include "queue.h"
 #include <pthread.h>
+#include <unistd.h>
+#include <string.h>
+
 
 // Storing active files
 pthread_mutex_t global_map_lock = PTHREAD_MUTEX_INITIALIZER;
 extern queue_t *file_map;
+extern int shutdown_signal;
 
 // Type alias for a function pointer
 typedef void (*request_handler_fn)(int);
@@ -22,8 +27,10 @@ typedef void (*request_handler_fn)(int);
 typedef struct file_handler {
     char *filename;
     pthread_mutex_t lock;
+    pthread_cond_t cond;
     queue_t *request_queue;
     request_handler_fn handler_fn;
+    pthread_t tid;
 } file_handler_t;
 
 typedef struct client {
@@ -44,6 +51,14 @@ void make_request(char* filename, int socket_desc, request_handler_fn handler_fn
 // Iteratively processes clients in a handler's queue
 void *file_worker(void *arg);
 
+// Function:    map_init
+// ---------------------
+// Initializes file_map
+void map_init();
 
+// Function:    cleanup_waiting_room
+// --------------------------------
+// Destroys all threads indicated by file_map
+void cleanup_waiting_room(void);
 
 #endif //WAITINGROOM_H

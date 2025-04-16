@@ -246,6 +246,10 @@ int main(void)
   
   // Create socket:
   socket_desc = server_init();
+
+  // Initialize waiting room / file map
+  map_init();
+
   // Accept incoming connections on loop:
   while(1)
   {
@@ -265,7 +269,7 @@ int main(void)
              inet_ntoa(client_addr.sin_addr),
              ntohs(client_addr.sin_port));
 
-      // Parse command
+      // Pass request to the waiting room
       handle_inbound(client_sock);
   }
   
