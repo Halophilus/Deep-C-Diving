@@ -10,50 +10,49 @@ OBJ_DIR := build
 SERVER_DIR := $(SRC_DIR)/server
 CLIENT_DIR := $(SRC_DIR)/client
 
-# Source files
-SRCS := $(wildcard $(SRC_DIR)/**/*.c)
+# Source files (recursive wildcard)
+SRCS := $(shell find $(SRC_DIR) -name '*.c')
 
-# Object files (.c -> .o) and dependency files (.c -> .d)
-OBJS := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS))
+# Object files
+OBJS := $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRCS))
 DEPS := $(OBJS:.o=.d)
 
-# Executables (temporary build names)
-SERVER := server
-CLIENT := client
+# Executables
+SERVER := $(SERVER_DIR)/server
+CLIENT := $(CLIENT_DIR)/client
 
-# Final locations
-SERVER_FINAL := $(SERVER_DIR)/server
-CLIENT_FINAL := $(CLIENT_DIR)/client
+# Object groups (based on relative paths)
+SERVER_OBJS := $(OBJ_DIR)/server/server.o \
+               $(OBJ_DIR)/waitingroom.o \
+               $(OBJ_DIR)/queue.o \
+               $(OBJ_DIR)/messenger.o
 
-# Object groups
-SERVER_OBJS := $(OBJ_DIR)/server.o $(OBJ_DIR)/waitingroom.o $(OBJ_DIR)/queue.o $(OBJ_DIR)/messenger.o
-CLIENT_OBJS := $(OBJ_DIR)/client.o $(OBJ_DIR)/messenger.o
+CLIENT_OBJS := $(OBJ_DIR)/client/client.o \
+               $(OBJ_DIR)/messenger.o
 
 # Default target
-all: $(SERVER_FINAL) $(CLIENT_FINAL)
+all: $(SERVER) $(CLIENT)
 
-# Build server and move it into server folder
-$(SERVER_FINAL): $(SERVER_OBJS)
-	$(CC) $^ -o $(SERVER)
-	@mkdir -p $(SERVER_DIR)
-	mv $(SERVER) $(SERVER_FINAL)
+# Build server
+$(SERVER): $(SERVER_OBJS)
+	@mkdir -p $(dir $@)
+	$(CC) $^ -o $@
 
-# Build client and move it into client folder
-$(CLIENT_FINAL): $(CLIENT_OBJS)
-	$(CC) $^ -o $(CLIENT)
-	@mkdir -p $(CLIENT_DIR)
-	mv $(CLIENT) $(CLIENT_FINAL)
+# Build client
+$(CLIENT): $(CLIENT_OBJS)
+	@mkdir -p $(dir $@)
+	$(CC) $^ -o $@
 
-# Pattern rule for building .o files
+# Rule for building .o files (handles nested .c paths)
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Include generated dependency files
+# Include dependency files
 -include $(DEPS)
 
 # Clean rule
 clean:
-	rm -rf $(OBJ_DIR) $(SERVER_FINAL) $(CLIENT_FINAL)
+	rm -rf $(OBJ_DIR) $(SERVER) $(CLIENT)
 
 .PHONY: all clean
