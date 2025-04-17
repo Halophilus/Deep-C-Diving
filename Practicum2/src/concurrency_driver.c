@@ -75,7 +75,7 @@ int main()
 
             // Call relevant subdirectory to avoid file access errors by each client
             int client_fd = i + 1;
-            sprintf(filename, "/%d/%s", client_fd, client_file);
+            sprintf(filename, "%d/%s", client_fd, client_file);
 
             // Log operation
             printf("Operation %d: %s ", i + 1, cmd);

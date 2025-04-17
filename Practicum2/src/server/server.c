@@ -26,8 +26,8 @@ int socket_desc, client_sock;
 // client:      socket file descriptor
 void clean_up(char *cmd, char *target, int client)
 {
-    free(cmd);
-    free(target);
+    if (cmd) free(cmd);
+    if (target) free(target);
     close(client);
 }
 

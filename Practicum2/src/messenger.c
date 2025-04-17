@@ -159,7 +159,6 @@ int receive_file(char *filename, int socket_desc)
 		int last_slash_index = last_slash - filename;
 		strcpy(directory_name, filename);
 		directory_name[last_slash_index] = '\0';
-
 #ifdef DEBUG
 		fprintf(stdout, "DEBUG receive_file: outer directory provided: %s\n", directory_name);
 #endif
@@ -232,7 +231,7 @@ int receive_file(char *filename, int socket_desc)
 		}
 
 		// Write the received data to file
-		fwrite(buffer, 1, bytes_received, fp);
+		fwrite(buffer, sizeof(char), bytes_received, fp);
 
         // Handle progress bar logic
 		total_bytes_received += bytes_received;
