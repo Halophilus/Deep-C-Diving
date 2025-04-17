@@ -293,8 +293,7 @@ char* receive_msg(int socket_desc)
 // Returns fd associated with socket
 int server_init()
 {
-    socklen_t client_size;
-    struct sockaddr_in server_addr, client_addr;
+    struct sockaddr_in server_addr;
 
     // Create socket:
     int socket_desc = socket(AF_INET, SOCK_STREAM, 0);

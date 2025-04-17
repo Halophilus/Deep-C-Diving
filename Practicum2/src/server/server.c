@@ -238,7 +238,7 @@ void handle_sigint(int sig)
 int main(void)
 {
   socklen_t client_size;
-  struct sockaddr_in server_addr, client_addr;
+  struct sockaddr_in client_addr;
 
   // Register signature handler
   signal(SIGINT, handle_sigint);

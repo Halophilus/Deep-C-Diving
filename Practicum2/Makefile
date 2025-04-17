@@ -26,7 +26,7 @@ SERVER_EXE := server/server
 DRIVER_EXE := concurrency_driver
 
 # Default target
-all: $(CLIENT_EXE) $(SERVER_EXE) $(DRIVER_EXE)
+all: reset $(CLIENT_EXE) $(SERVER_EXE) $(DRIVER_EXE)
 
 # Build client
 $(CLIENT_EXE): $(CLIENT_OBJ) $(COMMON_OBJS)
@@ -66,9 +66,13 @@ $(OBJ_DIR)/concurrency_driver.o: $(SRC_DIR)/concurrency_driver.c
 # Clean rule
 clean:
 	rm -rf $(OBJ_DIR) $(CLIENT_EXE) $(SERVER_EXE) $(DRIVER_EXE)
+	reset
+
+
+reset:
 	find server -maxdepth 1 -type f -name "*.txt" -delete
 	find client -maxdepth 1 -type f -name "*.txt" -delete
 	cp server/backup/*.txt server/
 	cp client/backup/*.txt client/
 
-.PHONY: all clean
+.PHONY: all clean reset
