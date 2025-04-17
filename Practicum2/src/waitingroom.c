@@ -8,7 +8,7 @@
  */
 
 #include "waitingroom.h"
-queue_t file_map;
+queue_t *file_map;
 int shutdown_signal;
 
 // Helper Function:    map_get
