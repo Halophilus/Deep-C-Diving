@@ -21,7 +21,7 @@ SERVER_OBJ  := $(OBJ_DIR)/server.o
 DRIVER_OBJ  := $(OBJ_DIR)/concurrency_driver.o
 
 # Executables
-CLIENT_EXE := client/rfs
+CLIENT_EXE := client/client
 SERVER_EXE := server/server
 DRIVER_EXE := concurrency_driver
 
