@@ -1,58 +1,53 @@
 # Compiler and flags
-CC      := gcc
-CFLAGS  := -Wall -Wextra -g -Iinclude -MMD -MP
+CC := gcc
+CFLAGS := -Wall -Wextra -g -Iinclude
 LDFLAGS :=
 
 # Directories
 SRC_DIR := src
 INC_DIR := include
 OBJ_DIR := build
-SERVER_DIR := $(SRC_DIR)/server
-CLIENT_DIR := $(SRC_DIR)/client
 
-# Source files (recursive wildcard)
-SRCS := $(shell find $(SRC_DIR) -name '*.c')
+CLIENT_SRC := $(SRC_DIR)/client/client.c
+SERVER_SRC := $(SRC_DIR)/server/server.c
+COMMON_SRCS := $(SRC_DIR)/messenger.c $(SRC_DIR)/queue.c $(SRC_DIR)/waitingroom.c
 
-# Object files
-OBJS := $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRCS))
-DEPS := $(OBJS:.o=.d)
+CLIENT_OBJS := $(OBJ_DIR)/client.o $(OBJ_DIR)/messenger.o $(OBJ_DIR)/queue.o $(OBJ_DIR)/waitingroom.o
+SERVER_OBJS := $(OBJ_DIR)/server.o $(OBJ_DIR)/messenger.o $(OBJ_DIR)/queue.o $(OBJ_DIR)/waitingroom.o
 
-# Executables
-SERVER := $(SERVER_DIR)/server
-CLIENT := $(CLIENT_DIR)/client
-
-# Object groups (based on relative paths)
-SERVER_OBJS := $(OBJ_DIR)/server/server.o \
-               $(OBJ_DIR)/waitingroom.o \
-               $(OBJ_DIR)/queue.o \
-               $(OBJ_DIR)/messenger.o
-
-CLIENT_OBJS := $(OBJ_DIR)/client/client.o \
-               $(OBJ_DIR)/messenger.o
+# Targets
+CLIENT_BIN := client/client
+SERVER_BIN := server/server
 
 # Default target
-all: $(SERVER) $(CLIENT)
+all: $(CLIENT_BIN) $(SERVER_BIN)
 
-# Build server
-$(SERVER): $(SERVER_OBJS)
+# Compile client
+$(CLIENT_BIN): $(CLIENT_OBJS)
 	@mkdir -p $(dir $@)
-	$(CC) $^ -o $@
+	$(CC) $^ -o $@ $(LDFLAGS)
 
-# Build client
-$(CLIENT): $(CLIENT_OBJS)
+# Compile server
+$(SERVER_BIN): $(SERVER_OBJS)
 	@mkdir -p $(dir $@)
-	$(CC) $^ -o $@
+	$(CC) $^ -o $@ $(LDFLAGS)
 
-# Rule for building .o files (handles nested .c paths)
+# Compile .c -> .o
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Include dependency files
--include $(DEPS)
+# Special cases for nested client/server .c files
+$(OBJ_DIR)/client.o: $(CLIENT_SRC)
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
 
-# Clean rule
+$(OBJ_DIR)/server.o: $(SERVER_SRC)
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Clean
 clean:
-	rm -rf $(OBJ_DIR) $(SERVER) $(CLIENT)
+	rm -rf $(OBJ_DIR) $(CLIENT_BIN) $(SERVER_BIN)
 
 .PHONY: all clean
