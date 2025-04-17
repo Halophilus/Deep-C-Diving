@@ -77,7 +77,7 @@ void print_map(){
     while(current_node != NULL)
     {
         node_data = (file_handler_t *)current_node->data;
-        fprintf(stdout, "%s, ", node_data->filename)
+        fprintf(stdout, "%s, ", node_data->filename);
         current_node = current_node->next;
     }
     fprintf(stdout, "\n");
@@ -98,7 +98,7 @@ void print_requests(file_handler_t *handler)
     {
         node_data = (client_t *)current_node->data;
         int socket_desc = node_data->socket_desc;
-        fprintf(stdout, "%d, " socket_desc);
+        fprintf(stdout, "%d, ", socket_desc);
         current_node = current_node->next;
     }
     fprintf(stdout, "\n");
@@ -212,7 +212,7 @@ void *file_worker(void *arg)
             pthread_cond_wait(&handler->cond, &handler->lock);
 
             // Use a shutdown signal to aid thread closure
-            if (shutdown_signal) return;
+            if (shutdown_signal) return NULL;
         }
 
         client_t *req = (client_t *)pop_queue(requests); // Dequeue top request
@@ -226,8 +226,8 @@ void *file_worker(void *arg)
         pthread_mutex_unlock(&handler->lock); // Unlock mutex handler
         int result = handler_process(req->socket_desc);
 
-        if (result) fprintf(stderr, "waitingroom.file_worker: operation failed\n")
-        
+        if (result) fprintf(stderr, "waitingroom.file_worker: operation failed\n");
+
 
         free(req);
     }
