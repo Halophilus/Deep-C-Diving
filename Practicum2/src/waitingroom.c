@@ -241,7 +241,7 @@ void *file_worker(void *arg)
 void waiting_room_init()
 {
     file_map = create_queue();
-    global_map_lock = PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_init(&global_map_lock, NULL);
     shutdown_signal = 0;
 }
 
@@ -275,4 +275,5 @@ void cleanup_waiting_room(void)
     }
 
     free(file_map);
+    pthread_mutex_destroy(&global_map_lock);
 }
