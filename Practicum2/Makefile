@@ -72,7 +72,7 @@ clean:
 reset:
 	find server -maxdepth 1 -type f -name "*.txt" -delete
 	find client -maxdepth 1 -type f -name "*.txt" -delete
-	cp -a server/backup/ server/
+	cp server/backup/*.txt server/
 	cp -a client/backup/ client/
 
 .PHONY: all clean reset
