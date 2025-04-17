@@ -12,6 +12,7 @@
 #define WAITINGROOM_H
 #define DEBUG
 
+
 #include "queue.h"
 #include <pthread.h>
 #include <unistd.h>

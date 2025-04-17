@@ -64,7 +64,7 @@ int handle_outbound(char *cmd, char *target, int socket_desc)
     if (strcmp(response, "GO") == 0) // Approval is given
     {
         // Free original response
-        if (response) free(response);
+        SAFE_FREE(response);
         response = NULL;
 
         // Send target filename
@@ -85,20 +85,20 @@ int handle_outbound(char *cmd, char *target, int socket_desc)
         // If the signal is given to proceed
         if (strcmp(response, "CONTINUE") == 0)
         {
-            if (response) free(response);
+            SAFE_FREE(response);
             return 0;
         }
         else
         {
             fprintf(stderr, "client.handle_outbound: session aborted by server before file could be sent\n");
-            if (response) free(response);
+            SAFE_FREE(response);
             return -1;
         }
     }
     else
     {
         fprintf(stderr, "client.handle_outbound: session aborted by server before filename could be processed\n");
-        if (response) free(response);
+        SAFE_FREE(response);
         return -1;
     }
 }

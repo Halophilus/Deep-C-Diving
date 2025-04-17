@@ -23,6 +23,9 @@
 #define DEFAULT_ADDRESS "127.0.0.1"
 #define DEFAULT_PORT 2000
 
+// Safe free macro
+#define SAFE_FREE(p) do { if (p) { free(p); p = NULL; } } while (0)
+
 // Function:    server_init
 // ------------------------
 // Initializes a TCP server
