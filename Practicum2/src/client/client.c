@@ -16,7 +16,7 @@
 // Frees dynamic resources and closes socket
 void clean_up(char *response, int socket_desc)
 {
-    if (response) free(response);
+    SAFE_FREE(response);
     close(socket_desc);
 }
 
