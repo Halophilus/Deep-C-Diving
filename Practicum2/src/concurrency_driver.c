@@ -14,14 +14,14 @@
 #include <string.h>
 
 // State macros
-#define NUM_OPERATIONS 6 // Number of concurrent operations forked
+#define NUM_OPERATIONS 5 // Number of concurrent operations forked
 #define NUM_CYCLES 5 // Number of waves of operations
 #define NUM_CLIENT_FILES 3
 #define NUM_SERVER_FILES 3
 
 // Files
-const char *files[] = {"client1.txt", "client2.txt", "client3.txt",
-                       "server1.txt", "server2.txt", "server3.txt"};
+const char *client_files[] = {"client1.txt", "client2.txt", "client3.txt"};
+const char *server_files[] = {"server1.txt", "server2.txt", "server3.txt"};
 
 // Command-line rfs arguments
 const char *commands[] = {"WRITE", "GET", "RM"};
@@ -63,36 +63,41 @@ int main()
             // Pick a random command
             const char *cmd = commands[rand() % 3];
 
+            char filename[128] = {'\0', };
+
             // And a random file
-            int client_index = rand() % 6;
-            int server_index = rand() % 6;
+            int client_index = rand() % 3;
+            int server_index = rand() % 3;
 
             // Pull filenames
-            const char *client_file = files[client_index];
-            const char *server_file = files[server_index];
+            const char *client_file = client_files[client_index];
+            const char *server_file = server_files[server_index];
+
+            // Call relevant subdirectory to avoid file access errors by each client
+            int client_fd = i + 1;
+            sprintf(filename, "/%d/%s", client_fd, client_file);
 
             // Log operation
             printf("Operation %d: %s ", i + 1, cmd);
 
+
             if (strcmp(cmd, "WRITE") == 0)
             {
-                printf("%s -> %s\n", client_file, server_file);
-                spawn_rfs_command("WRITE", client_file, server_file);
+                printf("%s -> %s\n", filename, server_file);
+                spawn_rfs_command("WRITE", filename, server_file);
             }
             else if (strcmp(cmd, "GET") == 0)
             {
-                printf("%s -> %s\n", server_file, client_file);
-                spawn_rfs_command("GET", server_file, client_file);
+                printf("%s -> %s\n", server_file, filename);
+                spawn_rfs_command("GET", server_file, filename);
             }
             else
             {
                 printf("%s\n", server_file);
-                spawn_rfs_command("RM", server_file, NULL);
+                spawn_rfs_command("RM", filename, NULL);
             }
 
-
         }
-
         // Wait between cycles
         sleep(2);
     }
