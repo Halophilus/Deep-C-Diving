@@ -68,7 +68,7 @@ int handle_write(int client_socket, char *target)
         case 0:
             break;
         case 1:
-            return handle_error(NULL, NULL, client_socket,
+            return handle_error(NULL, target, client_socket,
                                 "\nserver.handle_inbound: lost connection during WRITE\n",
                                 "File write failed");
         case -1:
@@ -213,11 +213,11 @@ int handle_inbound(int client_socket)
         }
     }
     else // If the second command is invalid
-    	return handle_error(cmd, NULL, client_socket,
+    	return handle_error(NULL, NULL, client_socket,
                             "\nserver: client request did not issue valid command\n",
                             NULL);
 
-    clean_up(cmd, target, client_socket);
+    //clean_up(cmd, target, client_socket);
     return result;
 }
 
