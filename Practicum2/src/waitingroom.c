@@ -9,6 +9,7 @@
 
 #include "waitingroom.h"
 queue_t *file_map;
+pthread_mutex_t global_map_lock;
 int shutdown_signal;
 
 // Helper Function:    map_get
@@ -240,6 +241,7 @@ void *file_worker(void *arg)
 void waiting_room_init()
 {
     file_map = create_queue();
+    global_map_lock = PTHREAD_MUTEX_INITIALIZER;
     shutdown_signal = 0;
 }
 

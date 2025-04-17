@@ -19,7 +19,7 @@
 
 
 // Storing active files
-pthread_mutex_t global_map_lock = PTHREAD_MUTEX_INITIALIZER;
+extern pthread_mutex_t global_map_lock;
 extern queue_t *file_map;
 extern int shutdown_signal;
 
