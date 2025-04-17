@@ -180,23 +180,13 @@ int receive_file(char *filename, int socket_desc)
 		}
 	}
 
-	// Test if the file exists
-	char filename_buffer[BUFFER_SIZE];
-	strcpy(filename_buffer, filename);
-	int version = 0;
-
-	// Iterate through version numbers until an unused filename is discovered
-    snprintf(filename_buffer, BUFFER_SIZE, "%s", filename);
-    	while (access(filename_buffer, F_OK) == 0) {
-        snprintf(filename_buffer, BUFFER_SIZE, "%s%d", filename, version++);
-    }
 
 #ifdef DEBUG
-	fprintf(stdout, "DEBUG receive_file: proceeding to download to %s at socket %d\n", filename_buffer, socket_desc);
+	fprintf(stdout, "DEBUG receive_file: proceeding to download to %s at socket %d\n", filename, socket_desc);
 #endif
 
     // Open file
-	FILE* fp = fopen(filename_buffer, "wb");
+	FILE* fp = fopen(filename, "wb");
 	if (!fp)
 	{
 		fprintf(stderr, "receive_file: error opening file %s\n", filename);
@@ -254,7 +244,7 @@ int receive_file(char *filename, int socket_desc)
 
 	}
 #ifdef DEBUG
-	fprintf(stdout, "DEBUG: client.send_file: file %s successfully sent to socket %d\n", filename_buffer, socket_desc);
+	fprintf(stdout, "DEBUG: client.send_file: file %s successfully sent to socket %d\n", filename, socket_desc);
 #endif
 	fclose(fp);
 	return 0;

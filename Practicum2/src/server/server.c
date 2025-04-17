@@ -128,7 +128,6 @@ int handle_get(int client_socket, char *target)
     }
 
     fprintf(stdout, "\nclient: %s\n", response);
-    clean_up(NULL, target, client_socket);
     return 0;
 }
 
