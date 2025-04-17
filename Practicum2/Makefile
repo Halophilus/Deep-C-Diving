@@ -66,5 +66,9 @@ $(OBJ_DIR)/concurrency_driver.o: $(SRC_DIR)/concurrency_driver.c
 # Clean rule
 clean:
 	rm -rf $(OBJ_DIR) $(CLIENT_EXE) $(SERVER_EXE) $(DRIVER_EXE)
+	find server -maxdepth 1 -type f -name "*.txt" -delete
+	find client -maxdepth 1 -type f -name "*.txt" -delete
+	cp server/backup/*.txt server/
+	cp client/backup/*.txt client/
 
 .PHONY: all clean

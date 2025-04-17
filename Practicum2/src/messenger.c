@@ -180,7 +180,6 @@ int receive_file(char *filename, int socket_desc)
 		}
 	}
 
-
 #ifdef DEBUG
 	fprintf(stdout, "DEBUG receive_file: proceeding to download to %s at socket %d\n", filename, socket_desc);
 #endif

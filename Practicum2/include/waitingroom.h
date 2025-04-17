@@ -56,7 +56,7 @@ void *file_worker(void *arg);
 // Function:    map_init
 // ---------------------
 // Initializes file_map
-void waiting_room_init();
+void waiting_room_init(void);
 
 // Function:    cleanup_waiting_room
 // --------------------------------
