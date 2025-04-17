@@ -7,43 +7,53 @@ LDFLAGS :=
 SRC_DIR := src
 INC_DIR := include
 OBJ_DIR := build
+SERVER_DIR := $(SRC_DIR)/server
+CLIENT_DIR := $(SRC_DIR)/client
 
-# Find all .c files recursively
-SRCS := $(shell find $(SRC_DIR) -name "*.c")
+# Source files
+SRCS := $(wildcard $(SRC_DIR)/**/*.c)
 
-# Generate corresponding .o and .d files in the build/ directory
+# Object files (.c -> .o) and dependency files (.c -> .d)
 OBJS := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS))
 DEPS := $(OBJS:.o=.d)
 
-# Executables
+# Executables (temporary build names)
 SERVER := server
 CLIENT := client
 
-# Explicitly set object dependencies
-SERVER_OBJS := $(OBJ_DIR)/server/server.o $(OBJ_DIR)/waitingroom.o $(OBJ_DIR)/queue.o $(OBJ_DIR)/messenger.o
-CLIENT_OBJS := $(OBJ_DIR)/client/client.o $(OBJ_DIR)/messenger.o
+# Final locations
+SERVER_FINAL := $(SERVER_DIR)/server
+CLIENT_FINAL := $(CLIENT_DIR)/client
+
+# Object groups
+SERVER_OBJS := $(OBJ_DIR)/server.o $(OBJ_DIR)/waitingroom.o $(OBJ_DIR)/queue.o $(OBJ_DIR)/messenger.o
+CLIENT_OBJS := $(OBJ_DIR)/client.o $(OBJ_DIR)/messenger.o
 
 # Default target
-all: $(SERVER) $(CLIENT)
+all: $(SERVER_FINAL) $(CLIENT_FINAL)
 
-# Build server
-$(SERVER): $(SERVER_OBJS)
-	$(CC) $^ -o $@ $(LDFLAGS)
+# Build server and move it into server folder
+$(SERVER_FINAL): $(SERVER_OBJS)
+	$(CC) $^ -o $(SERVER)
+	@mkdir -p $(SERVER_DIR)
+	mv $(SERVER) $(SERVER_FINAL)
 
-# Build client
-$(CLIENT): $(CLIENT_OBJS)
-	$(CC) $^ -o $@ $(LDFLAGS)
+# Build client and move it into client folder
+$(CLIENT_FINAL): $(CLIENT_OBJS)
+	$(CC) $^ -o $(CLIENT)
+	@mkdir -p $(CLIENT_DIR)
+	mv $(CLIENT) $(CLIENT_FINAL)
 
-# Pattern rule to build .o from .c (mirrors directory structure)
+# Pattern rule for building .o files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Include auto-generated dependency files
+# Include generated dependency files
 -include $(DEPS)
 
-# Clean up everything
+# Clean rule
 clean:
-	rm -rf $(OBJ_DIR) $(SERVER) $(CLIENT)
+	rm -rf $(OBJ_DIR) $(SERVER_FINAL) $(CLIENT_FINAL)
 
 .PHONY: all clean
