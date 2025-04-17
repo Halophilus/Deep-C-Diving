@@ -22,15 +22,17 @@ int shutdown_signal;
 file_handler_t *map_get(const char *filename)
 {
     node_t *current_node = file_map->front;
+    int queue_size = get_queue_size(queue);
     file_handler_t *node_data;
 
     // Iterate through list
-    while(current_node != NULL)
+    while(queue_size > 0)
     {
         node_data = (file_handler_t *)current_node->data;
         if (strcmp(node_data->filename, filename) == 0)
             return node_data;
         current_node = current_node->next;
+        queue_size--;
     }
 
     return NULL;
@@ -46,15 +48,17 @@ file_handler_t *map_get(const char *filename)
 node_t *map_get_node(const char *filename)
 {
     node_t *current_node = file_map->front;
+    int queue_size = get_queue_size(queue);
     file_handler_t *node_data;
 
     // Iterate through list
-    while(current_node != NULL)
+    while(queue_size > 0)
     {
         node_data = (file_handler_t *)current_node->data;
         if (node_data->filename == filename)
             return current_node;
         current_node = current_node->next;
+        queue_size--;
     }
 
     return NULL;
@@ -73,13 +77,15 @@ void map_put(file_handler_t *new_fh)
 // Prints current contents of file map
 void print_map(){
     node_t *current_node = file_map->front;
+    int queue_size = get_queue_size(queue);
     file_handler_t *node_data;
     // Iterate through list
-    while(current_node != NULL)
+    while(queue_size > 0)
     {
         node_data = (file_handler_t *)current_node->data;
         fprintf(stdout, "%s, ", node_data->filename);
         current_node = current_node->next;
+        queue_size--;
     }
     fprintf(stdout, "\n");
 }
@@ -93,14 +99,16 @@ void print_requests(file_handler_t *handler)
 {
     queue_t *requests = handler->request_queue;
     node_t *current_node = requests->front;
+    int queue_size = get_queue_size(requests);
     client_t *node_data;
 
-    while(current_node != NULL)
+    while(queue_size > 0)
     {
         node_data = (client_t *)current_node->data;
         int socket_desc = node_data->socket_desc;
         fprintf(stdout, "%d, ", socket_desc);
         current_node = current_node->next;
+        queue_size--;
     }
     fprintf(stdout, "\n");
 }
@@ -222,6 +230,7 @@ void *file_worker(void *arg)
         fprintf(stdout, "DEBUG waitingroom.file_worker: processing socket %d request for file %s\n", req->socket_desc, handler->filename);
         fprintf(stdout, "DEBUG waitingroom.file_worker: remaining requests for %s: ", handler->filename);
         print_requests(handler);
+        sleep(10);
 #endif
 
         pthread_mutex_unlock(&handler->lock); // Unlock mutex handler
