@@ -67,26 +67,6 @@ void map_put(file_handler_t *new_fh)
     push_queue(file_map, new_fh);
 }
 
-// Helper Function:    map_remove
-// ------------------------------
-// Removes an element from file_map
-//
-// filename:    file path associated with file_handler_t
-void map_remove(char *filename)
-{
-    //
-    node_t *removed = map_get_node(filename);
-    file_handler_t *handler = removed->data;
-
-    pthread_mutex_destroy(&handler->lock);
-    pthread_cond_destroy(&handler->cond);
-
-    free(handler->filename);
-    free(handler->request_queue);
-    free(handler);
-    remove_node(file_map, removed);
-}
-
 // Debug Function:    print_map
 // ----------------------------
 // Prints current contents of file map
@@ -244,24 +224,13 @@ void *file_worker(void *arg)
 #endif
 
         pthread_mutex_unlock(&handler->lock); // Unlock mutex handler
-        handler_process(req->socket_desc);
+        int result = handler_process(req->socket_desc);
+
+        if (result) fprintf(stderr, "waitingroom.file_worker: operation failed\n")
+        
 
         free(req);
     }
-
-    // Once empty, remove the element from the file map
-    pthread_mutex_lock(&global_map_lock);
-    map_remove(handler->filename);
-
-#ifdef DEBUG
-    fprintf(stdout, "DEBUG waitingroom.file_worker: updated file map after deleting %s: \n", handler->filename);
-    print_map();
-#endif
-
-    pthread_mutex_unlock(&global_map_lock);
-
-    // Destroy the mutex
-    pthread_mutex_destroy(&handler->lock);
 
 }
 

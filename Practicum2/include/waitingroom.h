@@ -24,7 +24,7 @@ extern queue_t *file_map;
 extern int shutdown_signal;
 
 // Type alias for a function pointer
-typedef void (*request_handler_fn)(int);
+typedef int (*request_handler_fn)(int);
 
 typedef struct file_handler {
     char *filename;

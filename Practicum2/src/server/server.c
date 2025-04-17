@@ -260,7 +260,7 @@ int main(void)
       if (client_sock < 0){
           printf("Can't accept\n");
           close(client_sock);
-          handle_error(NULL, socket_desc, "client: error getting server response after RM\n", NULL);
+          handle_error(NULL, NULL, socket_desc, "client: error getting server response after RM\n",  NULL);
           handle_sigint(-1);
       }
 
@@ -274,7 +274,7 @@ int main(void)
 
       if (!filename) {
           close(client_sock);
-          handle_error(NULL, socket_desc, "client: error getting server response after RM\n", NULL);
+          handle_error(NULL, NULL, socket_desc, "server: error getting server response after RM\n", NULL);
           handle_sigint(-1);
       }
 
