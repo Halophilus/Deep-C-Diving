@@ -144,7 +144,7 @@ void make_request(char* filename, int socket_desc, request_handler_fn handler_fn
         if (!handler)
         {
             fprintf(stderr, "waitingroom.make_request: memory allocation failed for file_handler_t for %s\n", filename);
-            free(client);
+            SAFE_FREE(client);
             exit(1);
         }
 
@@ -239,7 +239,7 @@ void *file_worker(void *arg)
         if (result) fprintf(stderr, "waitingroom.file_worker: operation failed\n");
 
 
-        free(req);
+        SAFE_FREE(req);
     }
 
 }
@@ -279,10 +279,10 @@ void cleanup_waiting_room(void)
         destroy_queue(handler->request_queue);
 
         // Free remaining pointers
-        free(handler->filename);
-        free(handler);
+        SAFE_FREE(handler->filename);
+        SAFE_FREE(handler);
     }
 
-    free(file_map);
+    SAFE_FREE(file_map);
     pthread_mutex_destroy(&global_map_lock);
 }

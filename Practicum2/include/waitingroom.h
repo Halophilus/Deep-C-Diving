@@ -11,6 +11,8 @@
 #ifndef WAITINGROOM_H
 #define WAITINGROOM_H
 #define DEBUG
+#define SAFE_FREE(p) do { if (p) { free(p); p = NULL; } } while (0)
+
 
 
 #include "queue.h"

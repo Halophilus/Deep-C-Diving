@@ -6,36 +6,7 @@
  *
  * Implementing a process queue
  */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-
-// Struct:	node_t
-// -------------------
-// An individual node in a DLL queue, can store any data
-typedef struct node
-{
-	struct node* next;
-	struct node* prev;
-
-	void* data;
-} node_t;
-
-// Struct:	queue_t
-// --------------------
-// A doubly-linked queue data structure
-//
-// Data structure:
-// front -next-> <-prev- node1 -next-> ... <-prev- back
-//   ...<-prev- back -next-> <-prev- front -next->...
-typedef struct
-{
-	node_t* back;
-	node_t* front;
-
-	unsigned int size;
-} queue_t;
+#include "queue.h"
 
 // Function:	create_node
 // ------------------------
@@ -140,7 +111,7 @@ void remove_node(queue_t* queue, node_t* node)
 	// Returns an empty queue
 	if (get_queue_size(queue) == 1)
 	{
-		free(node);
+		SAFE_FREE(node);
 		queue->front = NULL;
 		queue->back = NULL;
 		queue->size = 0;
