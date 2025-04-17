@@ -118,7 +118,7 @@ int send_file(char *filename, int socket_desc)
 		previous_progress += (double)bytes_read;
 
 #ifdef DEBUG
-        fprintf(stdout, "\nDEBUG messenger.send_file: %d bytes_read\n", bytes_read);
+        //fprintf(stdout, "\nDEBUG messenger.send_file: %d bytes_read\n", bytes_read);
 #endif
         print_progress_bar(&previous_progress, column_volume);
 	}
@@ -244,7 +244,7 @@ int receive_file(char *filename, int socket_desc)
 
 	}
 #ifdef DEBUG
-	fprintf(stdout, "DEBUG: client.send_file: file %s successfully sent to socket %d\n", filename, socket_desc);
+	//fprintf(stdout, "DEBUG: client.send_file: file %s successfully sent to socket %d\n", filename, socket_desc);
 #endif
 	fclose(fp);
 	return 0;

@@ -1,6 +1,6 @@
 # Compiler and flags
-CC := gcc
-CFLAGS := -Wall -Wextra -g -Iinclude
+CC      := gcc
+CFLAGS  := -Wall -Wextra -g -Iinclude -MMD -MP
 LDFLAGS :=
 
 # Directories
@@ -8,46 +8,63 @@ SRC_DIR := src
 INC_DIR := include
 OBJ_DIR := build
 
-CLIENT_SRC := $(SRC_DIR)/client/client.c
-SERVER_SRC := $(SRC_DIR)/server/server.c
+# Source files
 COMMON_SRCS := $(SRC_DIR)/messenger.c $(SRC_DIR)/queue.c $(SRC_DIR)/waitingroom.c
+CLIENT_SRC  := $(SRC_DIR)/client/client.c
+SERVER_SRC  := $(SRC_DIR)/server/server.c
+DRIVER_SRC  := $(SRC_DIR)/concurrency_driver.c
 
-CLIENT_OBJS := $(OBJ_DIR)/client.o $(OBJ_DIR)/messenger.o $(OBJ_DIR)/queue.o $(OBJ_DIR)/waitingroom.o
-SERVER_OBJS := $(OBJ_DIR)/server.o $(OBJ_DIR)/messenger.o $(OBJ_DIR)/queue.o $(OBJ_DIR)/waitingroom.o
+# Object files
+COMMON_OBJS := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(COMMON_SRCS))
+CLIENT_OBJ  := $(OBJ_DIR)/client.o
+SERVER_OBJ  := $(OBJ_DIR)/server.o
+DRIVER_OBJ  := $(OBJ_DIR)/concurrency_driver.o
 
-# Targets
-CLIENT_BIN := client/client
-SERVER_BIN := server/server
+# Executables
+CLIENT_EXE := client/rfs
+SERVER_EXE := server/server
+DRIVER_EXE := concurrency_driver
 
 # Default target
-all: $(CLIENT_BIN) $(SERVER_BIN)
+all: $(CLIENT_EXE) $(SERVER_EXE) $(DRIVER_EXE)
 
-# Compile client
-$(CLIENT_BIN): $(CLIENT_OBJS)
+# Build client
+$(CLIENT_EXE): $(CLIENT_OBJ) $(COMMON_OBJS)
 	@mkdir -p $(dir $@)
 	$(CC) $^ -o $@ $(LDFLAGS)
 
-# Compile server
-$(SERVER_BIN): $(SERVER_OBJS)
+# Build server
+$(SERVER_EXE): $(SERVER_OBJ) $(COMMON_OBJS)
 	@mkdir -p $(dir $@)
 	$(CC) $^ -o $@ $(LDFLAGS)
 
-# Compile .c -> .o
+# Build concurrency driver
+$(DRIVER_EXE): $(DRIVER_OBJ)
+	$(CC) $^ -o $@ $(LDFLAGS)
+
+# Pattern rule for building .o files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Special cases for nested client/server .c files
-$(OBJ_DIR)/client.o: $(CLIENT_SRC)
+# Special cases for nested sources
+$(OBJ_DIR)/client.o: $(SRC_DIR)/client/client.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(OBJ_DIR)/server.o: $(SERVER_SRC)
+$(OBJ_DIR)/server.o: $(SRC_DIR)/server/server.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Clean
+$(OBJ_DIR)/concurrency_driver.o: $(SRC_DIR)/concurrency_driver.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Include generated dependency files
+-include $(wildcard $(OBJ_DIR)/*.d)
+
+# Clean rule
 clean:
-	rm -rf $(OBJ_DIR) $(CLIENT_BIN) $(SERVER_BIN)
+	rm -rf $(OBJ_DIR) $(CLIENT_EXE) $(SERVER_EXE) $(DRIVER_EXE)
 
 .PHONY: all clean
