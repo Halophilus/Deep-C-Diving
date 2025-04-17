@@ -22,7 +22,7 @@ int shutdown_signal;
 file_handler_t *map_get(const char *filename)
 {
     node_t *current_node = file_map->front;
-    int queue_size = get_queue_size(queue);
+    int queue_size = get_queue_size(file_map);
     file_handler_t *node_data;
 
     // Iterate through list
@@ -48,7 +48,7 @@ file_handler_t *map_get(const char *filename)
 node_t *map_get_node(const char *filename)
 {
     node_t *current_node = file_map->front;
-    int queue_size = get_queue_size(queue);
+    int queue_size = get_queue_size(file_map);
     file_handler_t *node_data;
 
     // Iterate through list
@@ -77,7 +77,7 @@ void map_put(file_handler_t *new_fh)
 // Prints current contents of file map
 void print_map(){
     node_t *current_node = file_map->front;
-    int queue_size = get_queue_size(queue);
+    int queue_size = get_queue_size(file_map);
     file_handler_t *node_data;
     // Iterate through list
     while(queue_size > 0)
