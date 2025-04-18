@@ -80,7 +80,7 @@ int send_file(char *filename, int socket_desc)
 
     // Confirm that the destination file is in a valid, existing directory
     int directory_confirmation;
-    if (recv(socket_desc, &directory_confirmation, sizeof(file_size), 0) == -1)
+    if (recv(socket_desc, &directory_confirmation, sizeof(int), 0) == -1)
     {
         fprintf(stderr, "messenger.send_file: error confirming filepath validity for %s\n", filename);
         fclose(fp);

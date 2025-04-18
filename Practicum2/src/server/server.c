@@ -217,9 +217,7 @@ int handle_inbound(int client_socket)
                             "\nserver: client request did not issue valid command\n",
                             NULL);
 
-    if(result) clean_up(cmd, target, client_socket);
-    else close(client_socket);
-
+    close(client_socket);
     return result;
 }
 
@@ -252,7 +250,7 @@ int main(void)
   waiting_room_init();
 
   // Accept incoming connections on loop:
-  while(1)
+  while (1)
   {
       client_size = sizeof(client_addr);
       client_sock = accept(socket_desc, (struct sockaddr*)&client_addr, &client_size);

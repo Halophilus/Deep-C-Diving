@@ -29,6 +29,7 @@ extern int shutdown_signal;
 // Type alias for a function pointer
 typedef int (*request_handler_fn)(int);
 
+// Stores process information
 typedef struct file_handler {
     char *filename;
     pthread_mutex_t lock;
