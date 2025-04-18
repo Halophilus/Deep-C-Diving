@@ -59,14 +59,14 @@ int send_file(char *filename, int socket_desc)
 {
 
 #ifdef DEBUG
-	fprintf(stdout, "DEBUG: client.send_file: attempting transfer of %s to socket %d\n", filename, socket_desc);
+	fprintf(stdout, "DEBUG: messenger.send_file: attempting transfer of %s to socket %d\n", filename, socket_desc);
 #endif
 
 	char buffer[BUFFER_SIZE];
 	FILE* fp = fopen(filename, "rb");
 	if (!fp)
 	{
-		fprintf(stderr, "send_file: error opening file %s\n", filename);
+		fprintf(stderr, "messenger.send_file: error opening file %s\n", filename);
 		return -1;
 	}
 
@@ -78,10 +78,26 @@ int send_file(char *filename, int socket_desc)
     // Discovering column volume before converting to network bit order
     double column_volume = data_per_column(file_size);
 
+    // Confirm that the destination file is in a valid, existing directory
+    int directory_confirmation;
+    if (recv(socket_desc, &directory_confirmation, sizeof(file_size), 0) == -1)
+    {
+        fprintf(stderr, "messenger.send_file: error confirming file size of %s\n", filename);
+        fclose(fp);
+        return 1;
+    }
+
+    if (!directory_confirmation)
+    {
+        fprintf(stderr, "messenger.send_file: destination file placed in nonexistent directory %s\n", filename);
+        fclose(fp);
+        return 1;
+    }
+
     file_size = htonl(file_size);
 	if (send(socket_desc, &file_size, sizeof(file_size), 0) == -1)
 	{
-		fprintf(stderr, "send_file: error sending file size to socket %d\n", socket_desc);
+		fprintf(stderr, "messenger.send_file: error sending file size to socket %d\n", socket_desc);
 		fclose(fp);
 		return 1;
 	}
@@ -104,7 +120,7 @@ int send_file(char *filename, int socket_desc)
 			int result = send(socket_desc, buffer + bytes_sent, bytes_read - bytes_sent, 0);
 			if (result == -1) // If sending failed
 			{
-				fprintf(stderr, "\nsend_file: Error sending data from file %s to socket %d\n", filename, socket_desc);
+				fprintf(stderr, "\nmessenger.send_file: Error sending data from file %s to socket %d\n", filename, socket_desc);
 				fclose(fp);
 				return 1;
 			}
@@ -117,9 +133,6 @@ int send_file(char *filename, int socket_desc)
 		total_bytes_transferred += bytes_read;
 		previous_progress += (double)bytes_read;
 
-#ifdef DEBUG
-        //fprintf(stdout, "\nDEBUG messenger.send_file: %d bytes_read\n", bytes_read);
-#endif
         print_progress_bar(&previous_progress, column_volume);
 	}
 
@@ -145,7 +158,7 @@ int receive_file(char *filename, int socket_desc)
 {
 
 #ifdef DEBUG
-	fprintf(stdout, "receive_file: attempting retrieval of %s from socket %d\n", filename, socket_desc);
+	fprintf(stdout, "messenger.receive_file: attempting retrieval of %s from socket %d\n", filename, socket_desc);
 #endif
 
 	// Find outer directory
@@ -160,28 +173,42 @@ int receive_file(char *filename, int socket_desc)
 		strcpy(directory_name, filename);
 		directory_name[last_slash_index] = '\0';
 #ifdef DEBUG
-		fprintf(stdout, "DEBUG receive_file: outer directory provided: %s\n", directory_name);
+		fprintf(stdout, "DEBUG messenger.receive_file: outer directory provided: %s\n", directory_name);
 #endif
 
 		// Test if outer directory exists
 		struct stat info;
 		if (stat(directory_name, &info) != 0)
 		{
-			perror("stat"); // stat related error
-			return -1;
+            fprintf(stderr, "messenger.receive_file: directory queried at socket %d doesn't exist\n", socket_desc); // stat related error
+
+            int message = 0;
+            if (send(socket_desc, &message, sizeof(message), 0) == -1)
+                fprintf(stderr, "messenger.receive_file: error notifying client of directory discovery failure\n");
+            return -1;
 		}
 		
 		// If the provided path isn't a directory, abort
 		if (!S_ISDIR(info.st_mode))
 		{
-			fprintf(stderr, "receive_file: directory queried at socket %d doesn't exist\n", socket_desc);
-			return -1;
+			fprintf(stderr, "receive_file: directory queried at socket %d is not a path\n", socket_desc);
+            int message = 0;
+            if (send(socket_desc, &message, sizeof(message), 0) == -1)
+                fprintf(stderr, "messenger.receive_file: error notifying client of directory discovery failure\n");
+            return -1;
 		}
 	}
 
 #ifdef DEBUG
 	fprintf(stdout, "DEBUG receive_file: proceeding to download to %s at socket %d\n", filename, socket_desc);
 #endif
+
+    // Signal that the directory exists.
+    int message = 1;
+    if (send(socket_desc, &message, sizeof(message), 0) == -1)
+    {
+        fprintf(stderr, "messenger.receive_file: error notifying client of directory discovery failure\n");
+    }
 
     // Open file
 	FILE* fp = fopen(filename, "wb");

@@ -69,15 +69,15 @@ int handle_write(int client_socket, char *target)
             break;
         case 1:
             return handle_error(NULL, target, client_socket,
-                                "\nserver.handle_inbound: lost connection during WRITE\n",
+                                "\nserver.handle_write: lost connection during WRITE\n",
                                 "File write failed");
         case -1:
             return handle_error(NULL, target, client_socket,
-                                "\nserver.handle_inbound: error saving file during WRITE\n",
+                                "\nserver.handle_write: error saving file during WRITE\n",
                                 "File write failed");
         default:
             return handle_error(NULL, target, client_socket,
-                                "\nserver.handle_inbound: undefined error during WRITE\n",
+                                "\nserver.handle_write: undefined error during WRITE\n",
                                 "File write failed");
     }
 
@@ -217,7 +217,9 @@ int handle_inbound(int client_socket)
                             "\nserver: client request did not issue valid command\n",
                             NULL);
 
-    //clean_up(cmd, target, client_socket);
+    if(result) clean_up(cmd, target, client_socket);
+    else close(client_socket);
+
     return result;
 }
 
