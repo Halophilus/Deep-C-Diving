@@ -186,7 +186,8 @@ int handle_get(char *target, int socket_desc)
     clean_up(NULL, socket_desc);
     return 0;
 }
-// Function:    handle_get
+
+// Function:    handle_rm
 // -------------------------
 // Handling outbound rm requests
 //

@@ -64,7 +64,7 @@ node_t *map_get_node(const char *filename)
     {
         // If the current node contains data matching target
         node_data = (file_handler_t *)current_node->data;
-        if (node_data->filename == filename)
+        if (strcmp(node_data->filename, filename) == 0)
             return current_node;
 
         // Otherwise proceed to next node
@@ -232,7 +232,7 @@ void *file_worker(void *arg)
         pthread_mutex_lock(&handler->lock);
 
         // If the file worker runs out of requests
-        while (get_queue_size(requests) == 0)
+        while (get_queue_size(requests) == 0 && !shutdown_signal)
         {
 
 #ifdef DEBUG
@@ -241,9 +241,13 @@ void *file_worker(void *arg)
 
             // Put the thread on hold until a signal to wake is provided
             pthread_cond_wait(&handler->cond, &handler->lock);
+        }
 
-            // Permits an "out" for the function to exit before joining when terminating the program
-            if (shutdown_signal) return NULL;
+        // Exit if shutting down and no more requests
+        if (shutdown_signal && get_queue_size(requests) == 0)
+        {
+            pthread_mutex_unlock(&handler->lock);
+            break;
         }
 
         // Pull most recent request
@@ -265,6 +269,8 @@ void *file_worker(void *arg)
         // Free request once completed
         SAFE_FREE(req);
     }
+
+    return NULL;
 }
 
 // Function:    waiting_room_init
@@ -292,7 +298,11 @@ void cleanup_waiting_room(void)
         file_handler_t *handler = (file_handler_t *)pop_queue(file_map);
 
         // Terminate and join any active threads
+        pthread_mutex_lock(&handler->lock);
         pthread_cond_signal(&handler->cond); // Wake up babe, the shutdown flag was raised
+        pthread_mutex_unlock(&handler->lock);
+
+        // Safely join threads after releasing mutex
         pthread_join(handler->tid, NULL); // Join the threads
 
         // Destroy mutex/conditional

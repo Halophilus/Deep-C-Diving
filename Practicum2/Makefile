@@ -24,7 +24,7 @@ SERVER_OBJ  := $(OBJ_DIR)/server.o
 DRIVER_OBJ  := $(OBJ_DIR)/concurrency_driver.o
 
 # Executables
-CLIENT_EXE := client/client
+CLIENT_EXE := client/rfs
 SERVER_EXE := server/server
 DRIVER_EXE := concurrency_driver
 
@@ -71,7 +71,7 @@ clean:
 	rm -rf $(OBJ_DIR) $(CLIENT_EXE) $(SERVER_EXE) $(DRIVER_EXE)
 	reset
 
-
+# Reset rule (restores test file defaults)
 reset:
 	find server -maxdepth 1 -type f -name "*.txt" -delete
 	find client -maxdepth 1 -type f -name "*.txt" -delete
