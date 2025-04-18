@@ -133,7 +133,7 @@ int handle_write(char *target, int socket_desc)
                                 NULL);
     }
 
-    // Wait for server response (which contains versioned filename)
+    // Wait for server response
     char *response = receive_msg(socket_desc);
 
     if (!response) {

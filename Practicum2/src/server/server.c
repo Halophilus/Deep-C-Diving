@@ -127,6 +127,7 @@ int handle_get(int client_socket, char *target)
                             NULL);
     }
 
+    // Print message from client
     fprintf(stdout, "\nclient: %s\n", response);
     return 0;
 }
@@ -144,7 +145,9 @@ int handle_rm(int client_socket, char *target)
     if (!unlink(target)) // Attempt delete
     { // Upon success
         fprintf(stdout, "\nserver: %s deleted", target);
-        send_msg("target deleted successfully", client_socket);
+
+        send_msg("target deleted successfully", client_socket); // Notify client
+
         clean_up(NULL, target, client_socket);
         return 0;
     } else // Failure
@@ -167,6 +170,7 @@ int handle_inbound(int client_socket)
 {
     char *target; // target file
     int result = -1; // status flag
+
     // Receive command
     char *cmd = receive_msg(client_socket);
     if(!cmd)

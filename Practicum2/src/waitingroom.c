@@ -21,6 +21,7 @@ int shutdown_signal;
 // returns *file_handler_t if found, NULL if absent
 file_handler_t *map_get(const char *filename)
 {
+    // Pull the head node
     node_t *current_node = file_map->front;
     int queue_size = get_queue_size(file_map);
     file_handler_t *node_data;
@@ -28,13 +29,19 @@ file_handler_t *map_get(const char *filename)
     // Iterate through list
     while(queue_size > 0)
     {
+        // Coerce type to extract file handler
         node_data = (file_handler_t *)current_node->data;
+
+        // If the filename is a match
         if (strcmp(node_data->filename, filename) == 0)
             return node_data;
+
+        // Otherwise continue to the next node
         current_node = current_node->next;
         queue_size--;
     }
 
+    // File handler not found
     return NULL;
 }
 
@@ -47,6 +54,7 @@ file_handler_t *map_get(const char *filename)
 // returns *file_handler_t if found, NULL if absent
 node_t *map_get_node(const char *filename)
 {
+    // Pull head node
     node_t *current_node = file_map->front;
     int queue_size = get_queue_size(file_map);
     file_handler_t *node_data;
@@ -54,9 +62,12 @@ node_t *map_get_node(const char *filename)
     // Iterate through list
     while(queue_size > 0)
     {
+        // If the current node contains data matching target
         node_data = (file_handler_t *)current_node->data;
         if (node_data->filename == filename)
             return current_node;
+
+        // Otherwise proceed to next node
         current_node = current_node->next;
         queue_size--;
     }
@@ -122,25 +133,27 @@ void print_requests(file_handler_t *handler)
 // socket_desc: fd for client socket
 void make_request(char* filename, int socket_desc, request_handler_fn handler_fn)
 {
+    // Lock access to global file map and retrieve it
     pthread_mutex_lock(&global_map_lock);
     file_handler_t *handler = map_get(filename);
 
+    // Create a new client
     client_t *client = malloc(sizeof(client_t));
     if (!client)
     {
         fprintf(stderr, "waitingroom.make_request: memory allocation failed for client_t for socket %d and file %s\n", socket_desc, filename);
         exit(1);
     }
-
     client->socket_desc = socket_desc;
 
-    if (!handler) // If there isn't a corresponding handler
+    // If there isn't an existing corresponding handler, generate a new one
+    if (!handler)
     {
 #ifdef DEBUG
       fprintf(stdout, "DEBUG waitingroom.make_request: new file handler for %s created with socket %d\n", filename, socket_desc);
 #endif
+        // Allocate data
         handler = malloc(sizeof(file_handler_t));
-
         if (!handler)
         {
             fprintf(stderr, "waitingroom.make_request: memory allocation failed for file_handler_t for %s\n", filename);
@@ -148,10 +161,13 @@ void make_request(char* filename, int socket_desc, request_handler_fn handler_fn
             exit(1);
         }
 
+        // Generate fields
         pthread_mutex_init(&handler->lock, NULL);
         handler->request_queue = create_queue();
         handler->filename = strdup(filename);
         handler->handler_fn = handler_fn;
+
+        // Add handler to global file map
         map_put(handler);
 
 #ifdef DEBUG
@@ -165,8 +181,9 @@ void make_request(char* filename, int socket_desc, request_handler_fn handler_fn
         // Create pthread and store thread ID
         pthread_create(&handler->tid, NULL, file_worker, handler);
     }
-    else
+    else // If there is already a matching file handler
     {
+        // Lock access to the handler and add the request to the handler's request queue
         pthread_mutex_lock(&handler->lock);
         push_queue(handler->request_queue, client);
         pthread_cond_signal(&handler->cond);
@@ -177,6 +194,7 @@ void make_request(char* filename, int socket_desc, request_handler_fn handler_fn
         print_requests(handler);
 #endif
 
+        // Release the handler mutex
         pthread_mutex_unlock(&handler->lock);
     }
 
@@ -185,8 +203,8 @@ void make_request(char* filename, int socket_desc, request_handler_fn handler_fn
     print_map();
 #endif
 
+    // Release the global file map mutex
     pthread_mutex_unlock(&global_map_lock);
-
 }
 
 // Function:    file_worker
@@ -195,6 +213,7 @@ void make_request(char* filename, int socket_desc, request_handler_fn handler_fn
 // Spawned whenever a new file is being handled
 void *file_worker(void *arg)
 {
+    // Capture the file handler object, and pull active requests and worker function
     file_handler_t *handler = (file_handler_t *)arg;
     queue_t *requests = handler->request_queue;
     request_handler_fn handler_process = handler->handler_fn;
@@ -206,25 +225,28 @@ void *file_worker(void *arg)
     pthread_mutex_unlock(&global_map_lock);
 #endif
 
-    while (1) // Loop as long as there are items left in the queue
+    while (1) // Loop indefinitely
     {
-        pthread_mutex_lock(&handler->lock); // Lock mutex for handler
+        // Lock mutex handler
+        pthread_mutex_lock(&handler->lock);
 
-        while (get_queue_size(requests) == 0) // If there are no requests left
+        // If the file worker runs out of requests
+        while (get_queue_size(requests) == 0)
         {
 
 #ifdef DEBUG
             fprintf(stdout, "DEBUG waitingroom.file_worker: requests queue depleted for %s\n", handler->filename);
 #endif
 
-            // Wait until signal is called
+            // Put the thread on hold until a signal to wake is provided
             pthread_cond_wait(&handler->cond, &handler->lock);
 
-            // Use a shutdown signal to aid thread closure
+            // Permits an "out" for the function to exit before joining when terminating the program
             if (shutdown_signal) return NULL;
         }
 
-        client_t *req = (client_t *)pop_queue(requests); // Dequeue top request
+        // Pull most recent request
+        client_t *req = (client_t *)pop_queue(requests);
 
 #ifdef DEBUG
         fprintf(stdout, "DEBUG waitingroom.file_worker: processing socket %d request for file %s\n", req->socket_desc, handler->filename);
@@ -233,15 +255,15 @@ void *file_worker(void *arg)
         sleep(10);
 #endif
 
-        pthread_mutex_unlock(&handler->lock); // Unlock mutex handler
+        // Release mutex handler and perform operation on released request
+        pthread_mutex_unlock(&handler->lock);
         int result = handler_process(req->socket_desc);
 
         if (result) fprintf(stderr, "waitingroom.file_worker: operation failed\n");
 
-
+        // Free request once completed
         SAFE_FREE(req);
     }
-
 }
 
 // Function:    waiting_room_init
@@ -262,12 +284,13 @@ void cleanup_waiting_room(void)
     // Flag for shutdown
     shutdown_signal = 1;
 
-    while(get_queue_size(file_map) != 0) // While there are remaining file threads
+    // While there are remaining file threads
+    while(get_queue_size(file_map) != 0)
     {
         // Get file handler
         file_handler_t *handler = (file_handler_t *)pop_queue(file_map);
 
-        // Deal with threads
+        // Terminate and join any active threads
         pthread_cond_signal(&handler->cond); // Wake up babe, the shutdown flag was raised
         pthread_join(handler->tid, NULL); // Join the threads
 

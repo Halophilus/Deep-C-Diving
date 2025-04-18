@@ -13,32 +13,43 @@
 #define DEBUG
 #define SAFE_FREE(p) do { if (p) { free(p); p = NULL; } } while (0)
 
-
-
 #include "queue.h"
 #include <pthread.h>
 #include <unistd.h>
 #include <string.h>
 
+// Global Variables
+extern pthread_mutex_t global_map_lock; // Mutex for access to active file map
+extern queue_t *file_map; // Stores file handlers for files that have been queried at runtime
+extern int shutdown_signal; // Flag for terminating sleeping threads
 
-// Storing active files
-extern pthread_mutex_t global_map_lock;
-extern queue_t *file_map;
-extern int shutdown_signal;
-
-// Type alias for a function pointer
+// Function Pointer:    request_handler_fn
+// ---------------------------------------
+// Passed to file worker for some process related to handling client requests given a socket fd
 typedef int (*request_handler_fn)(int);
 
-// Stores process information
+// Type:        file_handler_t
+// ---------------------------
+// Local memory structure for keeping track of files that have been queried already
+// Stores process thread for closure when server is terminated
 typedef struct file_handler {
     char *filename;
+
+    // Thread access controllers
     pthread_mutex_t lock;
     pthread_cond_t cond;
-    queue_t *request_queue;
-    request_handler_fn handler_fn;
     pthread_t tid;
+
+    // All waiting clients
+    queue_t *request_queue;
+
+    // Process for file worker
+    request_handler_fn handler_fn;
 } file_handler_t;
 
+// Type:        client_t
+// --------------------
+// Capsule for passing client socket fds
 typedef struct client {
     int socket_desc;
 } client_t;

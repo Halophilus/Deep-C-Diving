@@ -19,11 +19,11 @@
 #define NUM_CLIENT_FILES 3
 #define NUM_SERVER_FILES 3
 
-// Files
+// Legal filenames at client and host directories
 const char *client_files[] = {"client1.txt", "client2.txt", "client3.txt"};
 const char *server_files[] = {"server1.txt", "server2.txt", "server3.txt"};
 
-// Command-line rfs arguments
+// Legal rfs arguments
 const char *commands[] = {"WRITE", "GET", "RM"};
 
 // Helper Function:     spawn_rfs_command
@@ -39,7 +39,7 @@ void spawn_rfs_command(const char *cmd, const char *arg1, const char *arg2) {
     if (pid == 0) { // If in child process
         if (strcmp(cmd, "RM") == 0) // If remove
         {
-            //execlp("rfs", "rfs", "RM", arg1, NULL);
+            execlp("rfs", "rfs", "RM", arg1, NULL);
         } else // if write or get
         {
             execlp("rfs", "rfs", cmd, arg1, arg2, NULL);
@@ -54,7 +54,7 @@ void spawn_rfs_command(const char *cmd, const char *arg1, const char *arg2) {
 // Spawns 20 random calls to RFS concurrently
 int main()
 {
-    srand(1);
+    srand(time(NULL));
 
     for (int j = 0; j < NUM_CYCLES; j++)
     {
@@ -80,7 +80,6 @@ int main()
             // Log operation
             printf("Operation %d: %s ", i + 1, cmd);
 
-
             if (strcmp(cmd, "WRITE") == 0)
             {
                 printf("%s -> %s\n", filename, server_file);
@@ -98,10 +97,9 @@ int main()
             }
 
         }
-        // Wait between cycles
+        // Wait between cycles for visibility
         sleep(2);
     }
-
 
     // Wait for all children to complete
     while (wait(NULL) > 0);

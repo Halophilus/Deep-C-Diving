@@ -20,8 +20,8 @@ double data_per_column(const uint32_t file_size)
 {
     struct winsize w;
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-    int window_width = w.ws_col;
-	double column_volume = (double)file_size / (double)window_width;
+    int window_width = w.ws_col; // Number of columns in the window
+	double column_volume = (double)file_size / (double)window_width; // data volume per column
 #ifdef DEBUG
 	fprintf(stdout, "\nmessenger.data_per_column: %d columns in this window, data per column: %lf\n", window_width, column_volume);
 #endif
@@ -31,6 +31,9 @@ double data_per_column(const uint32_t file_size)
 // Helper Function:    print_progress_bar
 // -------------------------------
 // Prints '#'s proportionate to download/upload progress
+// Works by iteratively subtracting a volume of data proportional to the amount of
+// download progress since the last time it was called and printing an '#' to
+// represent the fraction of the total file downloaded so far
 //
 // previous_progress: represents amount of progress since progress bar last updated
 // column_volume: write volume proportional to 1*'#'
@@ -39,6 +42,7 @@ void print_progress_bar(double *previous_progress, const double column_volume)
 #ifdef DEBUG
     fprintf(stdout, "\nDEBUG messenger.print_progress_bar: previous_progress %lf\n", *previous_progress);
 #endif
+
     while (*previous_progress > column_volume)
     {
         fprintf(stdout, "#");
@@ -62,6 +66,7 @@ int send_file(char *filename, int socket_desc)
 	fprintf(stdout, "DEBUG: messenger.send_file: attempting transfer of %s to socket %d\n", filename, socket_desc);
 #endif
 
+    // Open target file
 	char buffer[BUFFER_SIZE];
 	FILE* fp = fopen(filename, "rb");
 	if (!fp)
@@ -75,10 +80,10 @@ int send_file(char *filename, int socket_desc)
 	uint32_t file_size = (uint32_t) ftell(fp);
 	rewind(fp);
 
-    // Discovering column volume before converting to network bit order
+    // Discovering column volume
     double column_volume = data_per_column(file_size);
 
-    // Confirm that the destination file is in a valid, existing directory
+    // Query information about the requested directory
     int directory_confirmation;
     if (recv(socket_desc, &directory_confirmation, sizeof(int), 0) == -1)
     {
@@ -87,6 +92,7 @@ int send_file(char *filename, int socket_desc)
         return 1;
     }
 
+    // If the directory is malformed
     if (!directory_confirmation)
     {
         fprintf(stderr, "messenger.send_file: invalid destination filepath %s\n", filename);
@@ -94,6 +100,7 @@ int send_file(char *filename, int socket_desc)
         return 1;
     }
 
+    // Send file size so the host can track transfer continuity
     file_size = htonl(file_size);
 	if (send(socket_desc, &file_size, sizeof(file_size), 0) == -1)
 	{
@@ -124,7 +131,6 @@ int send_file(char *filename, int socket_desc)
 				fclose(fp);
 				return 1;
 			}
-
 			// Increment the amount of bytes sent
 			bytes_sent += result;		
 		}
@@ -132,7 +138,6 @@ int send_file(char *filename, int socket_desc)
 		// Handle progress bar logic
 		total_bytes_transferred += bytes_read;
 		previous_progress += (double)bytes_read;
-
         print_progress_bar(&previous_progress, column_volume);
 	}
 
@@ -218,7 +223,7 @@ int receive_file(char *filename, int socket_desc)
 		return -1;
 	}
 
-	// Receive file_size
+	// Receive file volume
 	int file_size;
 	if (recv(socket_desc, &file_size, sizeof(file_size), 0) == -1)
 	{
@@ -232,24 +237,28 @@ int receive_file(char *filename, int socket_desc)
 	fprintf(stdout, "DEBUG receive_file: file size of %d", file_size);
 #endif
 
-	// Receive file data
+	// Use variables to keep track of file completion status
 	char buffer[BUFFER_SIZE];
 	int total_bytes_received = 0;
     double column_volume = data_per_column(file_size);
     double previous_progress = 0;
 
-    // Indent for progress bar
+    // Newline to start progress bar
     fprintf(stdout, "\n");
 
+    // While there is unreceived file volume
     while (total_bytes_received < file_size)
 	{
+        // Attempt to buffer file
 		int bytes_received = recv(socket_desc, buffer, BUFFER_SIZE, 0);
-	       	if (bytes_received < 0)
+        if (bytes_received < 0)
 		{
 			fprintf(stderr, "\nreceive_file: error occurred receiving data\n");
 			fclose(fp);
 			return 1;
 		}
+
+        // If the stream is interrupted
 		if (bytes_received == 0)
 		{
 			fprintf(stderr, "\nreceive_file: sender disconnected mid-stream\n");
@@ -265,12 +274,15 @@ int receive_file(char *filename, int socket_desc)
         previous_progress += (double)bytes_received;
 
         print_progress_bar(&previous_progress, column_volume);
-
-
 	}
+
+    // Print last section of bar
+    fprintf(stdout, "#\n");
+
 #ifdef DEBUG
-	//fprintf(stdout, "DEBUG: client.send_file: file %s successfully sent to socket %d\n", filename, socket_desc);
+	fprintf(stdout, "DEBUG: client.send_file: file %s successfully sent to socket %d\n", filename, socket_desc);
 #endif
+
 	fclose(fp);
 	return 0;
 }
@@ -304,12 +316,11 @@ char* receive_msg(int socket_desc)
 	char *msg = (char *)malloc(BUFFER_SIZE);
 	
 	if (recv(socket_desc, msg, BUFFER_SIZE, 0) < 0)
-    {
         free(msg);
-        return NULL;
-    }
 	else
-		return msg;
+        return msg;
+
+    return NULL;
 }
 
 // Function:    server_init
@@ -324,7 +335,8 @@ int server_init()
     // Create socket:
     int socket_desc = socket(AF_INET, SOCK_STREAM, 0);
 
-    if(socket_desc < 0){
+    if (socket_desc < 0)
+    {
         printf("Error while creating socket\n");
         return -1;
     }
@@ -336,10 +348,12 @@ int server_init()
     server_addr.sin_addr.s_addr = inet_addr(DEFAULT_ADDRESS);
 
     // Bind to the set port and IP:
-    if(bind(socket_desc, (struct sockaddr*)&server_addr, sizeof(server_addr))<0){
+    if (bind(socket_desc, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0)
+    {
         printf("Couldn't bind to the port\n");
         return -1;
     }
+
     printf("Done with binding\n");
 
     // Listen for clients:
@@ -348,8 +362,10 @@ int server_init()
         close(socket_desc);
         return -1;
     }
+
     printf("\nListening for incoming connections.....\n");
 
+    // Return outbound socket fd
     return socket_desc;
 }
 
@@ -384,5 +400,6 @@ int client_init()
         return -1;
     }
 
+    // Return server's socket fd
     return socket_desc;
 }
