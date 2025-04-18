@@ -182,7 +182,7 @@ int handle_get(char *target, int socket_desc)
                             NULL);
 
     }
-    fprintf(stdout, "client: GET request successful");
+    fprintf(stdout, "client: GET request successful\n");
     clean_up(NULL, socket_desc);
     return 0;
 }

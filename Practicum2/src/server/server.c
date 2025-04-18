@@ -144,17 +144,17 @@ int handle_rm(int client_socket, char *target)
 {
     if (!unlink(target)) // Attempt delete
     { // Upon success
-        fprintf(stdout, "\nserver: %s deleted", target);
+        fprintf(stdout, "\nserver: %s deleted\n", target);
 
-        send_msg("target deleted successfully", client_socket); // Notify client
+        send_msg("target deleted successfully\n", client_socket); // Notify client
 
         clean_up(NULL, target, client_socket);
         return 0;
     } else // Failure
     {
         return handle_error(NULL, target, client_socket,
-                            "\nserver: %s could not be deleted",
-                            "target could not be deleted");
+                            "\nserver: %s could not be deleted\n",
+                            "target could not be deleted\n");
     }
 }
 
@@ -180,7 +180,7 @@ int handle_inbound(int client_socket)
     }
 
 #ifdef DEBUG
-    fprintf(stdout, "\nDEBUG server.handle_inbound: CMD = %s", cmd);
+    fprintf(stdout, "\nDEBUG server.handle_inbound: CMD = %s\n", cmd);
 #endif
 
     // Parse command

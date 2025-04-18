@@ -189,7 +189,7 @@ void make_request(char* filename, int socket_desc, request_handler_fn handler_fn
         pthread_cond_signal(&handler->cond);
 
 #ifdef DEBUG
-        fprintf(stdout, "DEBUG waitingroom.make_request: socket %d added to handler for %s", socket_desc, filename);
+        fprintf(stdout, "DEBUG waitingroom.make_request: socket %d added to handler for %s\n", socket_desc, filename);
         fprintf(stdout, "DEBUG waitingroom.make_request: current requests queue for %s handler\n", filename);
         print_requests(handler);
 #endif
@@ -251,7 +251,7 @@ void *file_worker(void *arg)
 
 #ifdef DEBUG
         fprintf(stdout, "DEBUG waitingroom.file_worker: processing socket %d request for file %s\n", req->socket_desc, handler->filename);
-        fprintf(stdout, "DEBUG waitingroom.file_worker: remaining requests for %s: ", handler->filename);
+        fprintf(stdout, "DEBUG waitingroom.file_worker: remaining requests for %s: \n", handler->filename);
         print_requests(handler);
         sleep(10);
 #endif

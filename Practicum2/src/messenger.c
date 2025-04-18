@@ -234,7 +234,7 @@ int receive_file(char *filename, int socket_desc)
     file_size = ntohl(file_size);
 
 #ifdef DEBUG
-	fprintf(stdout, "DEBUG receive_file: file size of %d", file_size);
+	fprintf(stdout, "DEBUG receive_file: file size of %d\n", file_size);
 #endif
 
 	// Use variables to keep track of file completion status
