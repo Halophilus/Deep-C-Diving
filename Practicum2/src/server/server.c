@@ -72,7 +72,7 @@ int handle_write(int client_socket, char *target)
                                 "\nserver.handle_write: lost connection during WRITE\n",
                                 "File write failed");
         case -1:
-            return handle_error(NULL, target, client_socket,
+            return handle_error(NULL, NULL, client_socket,
                                 "\nserver.handle_write: error saving file during WRITE\n",
                                 "File write failed");
         default:
