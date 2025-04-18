@@ -82,14 +82,14 @@ int send_file(char *filename, int socket_desc)
     int directory_confirmation;
     if (recv(socket_desc, &directory_confirmation, sizeof(file_size), 0) == -1)
     {
-        fprintf(stderr, "messenger.send_file: error confirming file size of %s\n", filename);
+        fprintf(stderr, "messenger.send_file: error confirming filepath validity for %s\n", filename);
         fclose(fp);
         return 1;
     }
 
     if (!directory_confirmation)
     {
-        fprintf(stderr, "messenger.send_file: destination file placed in nonexistent directory %s\n", filename);
+        fprintf(stderr, "messenger.send_file: invalid destination filepath %s\n", filename);
         fclose(fp);
         return 1;
     }
@@ -140,7 +140,7 @@ int send_file(char *filename, int socket_desc)
     fprintf(stdout, "#\n");
 
 #ifdef DEBUG
-	fprintf(stdout, "DEBUG: client.send_file: file %s successfully sent to socket %d\n", filename, socket_desc);
+	fprintf(stdout, "DEBUG: messenger.send_file: file %s successfully sent to socket %d\n", filename, socket_desc);
 #endif
 	fclose(fp);
 	return 0;
