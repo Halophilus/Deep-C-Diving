@@ -211,6 +211,7 @@ void make_request(char* filename, int socket_desc, request_handler_fn handler_fn
 // ------------------------
 // Iteratively processes clients in a handler's queue
 // Spawned whenever a new file is being handled
+// Sleeps for 10 seconds before parsing requests when in debug mode
 void *file_worker(void *arg)
 {
     // Capture the file handler object, and pull active requests and worker function

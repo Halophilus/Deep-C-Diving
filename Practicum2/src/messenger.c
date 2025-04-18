@@ -142,7 +142,7 @@ int send_file(char *filename, int socket_desc)
 	}
 
     // Add newline after progress bar terminates
-    fprintf(stdout, "#\n");
+    fprintf(stdout, "\n");
 
 #ifdef DEBUG
 	fprintf(stdout, "DEBUG: messenger.send_file: file %s successfully sent to socket %d\n", filename, socket_desc);
@@ -277,7 +277,7 @@ int receive_file(char *filename, int socket_desc)
 	}
 
     // Print last section of bar
-    fprintf(stdout, "#\n");
+    fprintf(stdout, "\n");
 
 #ifdef DEBUG
 	fprintf(stdout, "DEBUG: client.send_file: file %s successfully sent to socket %d\n", filename, socket_desc);
