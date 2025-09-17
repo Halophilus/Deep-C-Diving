@@ -9,7 +9,7 @@ It also includes a **concurrency stress-test driver** to validate correctness un
 
 ---
 
-## 📂 Repository Structure
+## Repository Structure
 
 ```
 .
