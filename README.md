@@ -120,7 +120,46 @@ This file highlights **process control**, **randomized testing**, and **robustne
 
 ---
 
-## ⚙️ Building with Make
+---
+
+## Handshake Protocol Flowchart
+```mermaid
+sequenceDiagram
+    participant C as Client (rfs)
+    participant M as Messenger (TCP wrappers)
+    participant S as Server
+
+    Note over C,S: Example: Client wants to SEND a file
+
+    C->>M: open socket to server (connect)
+    M->>S: establish TCP connection
+    S-->>M: accept connection
+
+    C->>M: send operation type (e.g., "SEND")
+    M->>S: transmit command string
+    S-->>M: acknowledge operation
+
+    C->>M: send metadata<br/>(filename, size)
+    M->>S: transmit metadata
+    S-->>M: directory check result (int)
+
+    alt directory OK
+        C->>M: stream file data (chunks)
+        loop until EOF
+            M->>S: send file block
+            S-->>M: acknowledge block
+        end
+        S-->>M: final confirmation
+        M-->>C: report success
+    else directory missing / error
+        S-->>M: send error code
+        M-->>C: report failure
+    end
+
+    Note over C,S: Other operations (GET, RM) follow the same<br/>pattern: command → metadata → data stream → confirmation
+```
+
+## Building with Make
 
 This project is managed by a **Makefile**. Key features:
 
@@ -226,38 +265,3 @@ This project demonstrates:
 MIT License — free to use, modify, and share.
 
 ---
-```mermaid
-sequenceDiagram
-    participant C as Client (rfs)
-    participant M as Messenger (TCP wrappers)
-    participant S as Server
-
-    Note over C,S: Example: Client wants to SEND a file
-
-    C->>M: open socket to server (connect)
-    M->>S: establish TCP connection
-    S-->>M: accept connection
-
-    C->>M: send operation type (e.g., "SEND")
-    M->>S: transmit command string
-    S-->>M: acknowledge operation
-
-    C->>M: send metadata<br/>(filename, size)
-    M->>S: transmit metadata
-    S-->>M: directory check result (int)
-
-    alt directory OK
-        C->>M: stream file data (chunks)
-        loop until EOF
-            M->>S: send file block
-            S-->>M: acknowledge block
-        end
-        S-->>M: final confirmation
-        M-->>C: report success
-    else directory missing / error
-        S-->>M: send error code
-        M-->>C: report failure
-    end
-
-    Note over C,S: Other operations (GET, RM) follow the same<br/>pattern: command → metadata → data stream → confirmation
-```
