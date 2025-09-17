@@ -149,7 +149,7 @@ Compiles with `-DEBUG` for additional logging.
 
 ---
 
-## 🚀 Usage
+## Usage
 
 ### 1. Start the server
 
@@ -228,68 +228,36 @@ MIT License — free to use, modify, and share.
 ---
 ```mermaid
 sequenceDiagram
-participant C as Client (rfs)
-participant M as Messenger (TCP wrappers)
-participant S as Server
+    participant C as Client (rfs)
+    participant M as Messenger (TCP wrappers)
+    participant S as Server
 
-    Note over C,S: Connection Setup
-    C->>M: open socket to server
+    Note over C,S: Example: Client wants to SEND a file
+
+    C->>M: open socket to server (connect)
     M->>S: establish TCP connection
     S-->>M: accept connection
 
-    Note over C,S: Step 1: Command Selection
-    C->>M: send command ("SEND", "GET", or "RM")
+    C->>M: send operation type (e.g., "SEND")
     M->>S: transmit command string
-    S-->>M: acknowledge command
+    S-->>M: acknowledge operation
 
-    alt SEND (upload file)
-        C->>M: send metadata (filename, size)
-        M->>S: transmit metadata
-        S-->>M: directory confirmation (int)
+    C->>M: send metadata<br/>(filename, size)
+    M->>S: transmit metadata
+    S-->>M: directory check result (int)
 
-        alt directory OK
-            loop until EOF
-                C->>M: send file block
-                M->>S: transmit block
-                S-->>M: acknowledge block
-            end
-            S-->>M: final confirmation
-            M-->>C: report success
-        else directory error
-            S-->>M: error code
-            M-->>C: report failure
+    alt directory OK
+        C->>M: stream file data (chunks)
+        loop until EOF
+            M->>S: send file block
+            S-->>M: acknowledge block
         end
-
-    else GET (download file)
-        C->>M: send metadata (requested filename)
-        M->>S: transmit request
-        S-->>M: check file existence (int)
-
-        alt file exists
-            S->>M: send metadata (size)
-            M->>C: prepare local file
-            loop until EOF
-                S->>M: send file block
-                M->>C: write block
-            end
-            M-->>C: report success
-        else file missing
-            S-->>M: error code
-            M-->>C: report failure
-        end
-
-    else RM (remove file)
-        C->>M: send metadata (filename)
-        M->>S: transmit request
-        S-->>M: attempt deletion
-        alt deletion success
-            S-->>M: confirmation
-            M-->>C: report success
-        else deletion failed
-            S-->>M: error code
-            M-->>C: report failure
-        end
+        S-->>M: final confirmation
+        M-->>C: report success
+    else directory missing / error
+        S-->>M: send error code
+        M-->>C: report failure
     end
 
-    Note over C,S: Connection closes
+    Note over C,S: Other operations (GET, RM) follow the same<br/>pattern: command → metadata → data stream → confirmation
 ```
