@@ -1,3 +1,0 @@
-recitation
-tic tac toe lab
-reflection
