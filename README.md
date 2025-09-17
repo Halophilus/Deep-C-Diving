@@ -1,7 +1,5 @@
 # Remote File Server (RFS) in C
 
-This repository contains a complete TCP client-server application written in **C**, demonstrating low-level systems programming, socket communication, concurrency, synchronization, and file I/O.  
-
 The project implements a **remote file service** where clients can:
 - Upload files to the server (`WRITE`)
 - Download files from the server (`GET`)
